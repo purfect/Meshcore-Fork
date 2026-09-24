@@ -55,7 +55,6 @@ jobs:
   build:
     needs: generate-build-matrix
     runs-on: ubuntu-latest
-    continue-on-error: true # don't fail entire build if one board fails to build
     strategy:
       matrix:
         target: ${{ fromJson(needs.generate-build-matrix.outputs.targets) }}
@@ -74,10 +73,42 @@ jobs:
           FIRMWARE_VERSION: ${{ env.GIT_TAG_VERSION }}
         run: /usr/bin/env bash build.sh build-firmware ${{ matrix.target }}
 
+      - name: Verify MeshCore Web Flasher package
+        shell: bash
+        run: |
+          shopt -s nullglob
+          merged_bins=(out/*-merged.bin)
+          all_bins=(out/*.bin)
+          update_bins=()
+          dfu_zips=(out/*.zip)
+
+          for firmware_file in "${all_bins[@]}"; do
+            if [[ "$firmware_file" != *-merged.bin ]]; then
+              update_bins+=("$firmware_file")
+            fi
+          done
+
+          if (( ${#merged_bins[@]} > 0 )); then
+            if (( ${#update_bins[@]} == 0 )); then
+              echo "ESP32 build is missing the non-merged update BIN." >&2
+              exit 1
+            fi
+
+            echo "### MeshCore Web Flasher: ${{ matrix.target }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Fresh install/recovery: \`${merged_bins[0]#out/}\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Update preserving settings: \`${update_bins[0]#out/}\`" >> "$GITHUB_STEP_SUMMARY"
+          elif (( ${#dfu_zips[@]} > 0 )); then
+            echo "### MeshCore Web Flasher: ${{ matrix.target }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "- nRF52 serial DFU: \`${dfu_zips[0]#out/}\`" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No MeshCore Web Flasher compatible .bin or nRF52 OTA .zip was produced." >&2
+            exit 1
+          fi
+
       - name: Upload Workflow Artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: "${{ matrix.target }}"
+          name: "${{ matrix.target }}-firmware"
           path: out
 
   create-release:

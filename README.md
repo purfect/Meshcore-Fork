@@ -22,12 +22,50 @@ herunterladen:
 Das ZIP-Artifact entpacken. Für ESP32-Geräte enthält es normalerweise zwei
 Dateien:
 
-- `*-merged.bin`: vollständige Erstinstallation, Flash-Adresse `0x0`
-- `*.bin` ohne `-merged`: Firmware-Update, Flash-Adresse `0x10000`
+- `*-merged.bin`: vollständige Erstinstallation oder Wiederherstellung
+- `*.bin` ohne `-merged`: Update unter Beibehaltung der Einstellungen
 
 Die lokal gebauten Dateien liegen entsprechend unter `out/`.
 
-### 2. Python und esptool installieren
+### 2. Mit dem MeshCore Web-Flasher flashen (empfohlen)
+
+Der Web-Flasher benötigt keine Python-Installation. Er unterstützt beim ESP32
+lokale `.bin`-Dateien und beim nRF52 lokale OTA-`.zip`-Dateien.
+
+1. In **Chrome oder Edge auf einem Desktop-PC**
+   [meshcore.co.uk/flasher.html](https://meshcore.co.uk/flasher.html) öffnen.
+2. **Custom Firmware** auswählen und die zuvor aus dem GitHub-Artifact
+   entpackte Datei angeben.
+3. Für eine Erstinstallation oder Wiederherstellung auf dem XIAO die
+   `*-merged.bin` auswählen. Für ein Update einer vorhandenen Installation die
+   normale `.bin` **ohne** `-merged` auswählen.
+4. Das XIAO per USB anschließen. Falls es nicht erkannt wird, wie im nächsten
+   Abschnitt beschrieben in den Bootloader-Modus versetzen.
+5. Im Web-Flasher verbinden, den angezeigten seriellen Port auswählen und den
+   Flash-Vorgang vollständig durchlaufen lassen.
+
+Den Dateinamen nicht ändern: Der Zusatz `-merged.bin` kennzeichnet für den
+Flasher das vollständige ESP32-Abbild. Eine vollständige Installation kann die
+bisherige Geräteidentität, Kanäle, Einstellungen und Auto-Reply-Regeln löschen.
+
+### 3. XIAO in den Bootloader-Modus versetzen
+
+1. Das XIAO mit einem **USB-Datenkabel** am PC anschließen.
+2. Die Taste **BOOT** gedrückt halten.
+3. Die Taste **RESET** kurz drücken und wieder loslassen.
+4. Anschließend **BOOT** loslassen.
+
+Im Web-Flasher beziehungsweise im Geräte-Manager unter **Anschlüsse (COM &
+LPT)** erscheint nun ein COM-Port. Wenn Windows lediglich einen Ton ausgibt,
+aber kein Port erscheint, zuerst ein anderes USB-Datenkabel und einen direkten
+USB-Anschluss am PC testen.
+
+### Alternative: manuell mit esptool flashen
+
+Die folgenden Schritte sind nur erforderlich, wenn der Web-Flasher nicht
+verwendet werden soll oder nicht funktioniert.
+
+#### Python und esptool installieren
 
 Falls der Befehl `py` noch nicht vorhanden ist, Python von
 [python.org](https://www.python.org/downloads/windows/) installieren. Danach ein
@@ -37,15 +75,7 @@ neues PowerShell-Fenster öffnen und esptool installieren:
 py -m pip install --upgrade esptool
 ```
 
-### 3. XIAO in den Bootloader-Modus versetzen
-
-1. Das XIAO mit einem **USB-Datenkabel** am PC anschließen.
-2. Die Taste **BOOT** gedrückt halten.
-3. Die Taste **RESET** kurz drücken und wieder loslassen.
-4. Anschließend **BOOT** loslassen.
-
-Im Geräte-Manager unter **Anschlüsse (COM & LPT)** erscheint nun ein COM-Port.
-Die verfügbaren Ports lassen sich auch in PowerShell anzeigen:
+Die verfügbaren Ports lassen sich in PowerShell anzeigen:
 
 ```powershell
 [System.IO.Ports.SerialPort]::GetPortNames()
@@ -54,7 +84,7 @@ Die verfügbaren Ports lassen sich auch in PowerShell anzeigen:
 In den folgenden Beispielen muss `COM7` durch diesen Port und der Dateiname durch
 den tatsächlich heruntergeladenen Namen ersetzt werden.
 
-### 4a. Vollständige Erstinstallation
+#### Vollständige Erstinstallation
 
 Die `-merged.bin` wird ab Adresse `0x0` geschrieben:
 
@@ -72,7 +102,7 @@ py -m esptool --chip esp32s3 --port COM7 erase_flash
 **Achtung:** `erase_flash` löscht Identität, Kanäle, Einstellungen und vorhandene
 Auto-Reply-Regeln. Danach erneut die `-merged.bin` flashen.
 
-### 4b. Vorhandene Installation aktualisieren
+#### Vorhandene Installation aktualisieren
 
 Für ein normales Update die Datei **ohne** `-merged` bei Adresse `0x10000`
 schreiben. Vorher nicht `erase_flash` ausführen:
@@ -85,7 +115,7 @@ Nach `Hash of data verified` das XIAO einmal mit **RESET** neu starten. Falls de
 Port nicht geöffnet werden kann, alle seriellen Monitore, Browser-Tabs und Apps
 schließen, die den COM-Port verwenden, und den Bootloader-Modus erneut aktivieren.
 
-### 5. App verbinden und Auto-Antworten konfigurieren
+### 4. App verbinden und Auto-Antworten konfigurieren
 
 - Bei der USB-Firmware das Gerät im MeshCore-Dashboard über den seriellen
   USB-Port verbinden.
@@ -113,10 +143,10 @@ Die GitHub Action erzeugt pro Gerät nur die tatsächlich flashbaren Dateien:
 
 | Datei | Typische Plattform | Installation unter Windows 11 |
 | --- | --- | --- |
-| `-merged.bin` | ESP32 | Mit esptool bei Adresse `0x0` flashen |
-| `.bin` | ESP32/STM32/RP2040 | Gerätespezifischer Updater; bei diesem ESP32 Update ab `0x10000` |
-| `.uf2` | nRF52/RP2040 | Gerät in den UF2-Bootloader versetzen und auf das USB-Laufwerk kopieren |
-| `.zip` | nRF52 | DFU-Paket für einen kompatiblen nRF52-DFU-Updater |
+| `-merged.bin` | ESP32 | MeshCore Web-Flasher für Erstinstallation/Wiederherstellung; alternativ esptool ab `0x0` |
+| `.bin` | ESP32/STM32/RP2040 | Beim ESP32 Web-Flasher-Update; alternativ bei diesem XIAO esptool ab `0x10000` |
+| `.uf2` | nRF52/RP2040 | Gerät in den UF2-Bootloader versetzen und auf das USB-Laufwerk kopieren; nicht für „Custom Firmware“ im Web-Flasher |
+| `.zip` | nRF52 | MeshCore Web-Flasher oder kompatibler nRF52-DFU-Updater |
 | `.hex` | STM32 | Mit STM32CubeProgrammer und den Vorgaben des Geräteherstellers flashen |
 
 Immer nur das Artifact verwenden, dessen Gerätename exakt zur vorhandenen

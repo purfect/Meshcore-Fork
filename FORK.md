@@ -140,6 +140,12 @@ Mikrocontroller benötigt:
 - STM32: `.bin` und `.hex`
 
 Nicht vorhandene Formate werden nicht als leere oder künstliche Dateien angelegt.
+Jeder Build prüft zusätzlich, ob ein für den MeshCore Web-Flasher geeignetes
+Paket entstanden ist: ESP32-Builds benötigen eine normale und eine
+`-merged.bin`, nRF52-Builds ein OTA-`.zip`. Fehlt eine dieser erforderlichen
+Dateien, wird der betreffende Matrix-Job als fehlgeschlagen markiert. Der
+Web-Flasher akzeptiert unter **Custom Firmware** `.bin` für ESP32 und `.zip` für
+nRF52; ein GitHub-Artifact muss vor der Dateiauswahl zuerst entpackt werden.
 
 ## Funkparameter
 
