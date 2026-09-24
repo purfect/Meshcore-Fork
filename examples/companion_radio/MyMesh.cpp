@@ -640,6 +640,35 @@ static const char *skipChannelMarker(const char *name) {
   return name[0] == '#' ? &name[1] : name;
 }
 
+static void appendAutoReplyTemplateText(char *output, size_t output_size, size_t &output_len,
+                                        const char *value) {
+  if (output_len >= output_size - 1) return;
+  int written = snprintf(&output[output_len], output_size - output_len, "%s", value);
+  if (written > 0) output_len += min((size_t)written, output_size - output_len - 1);
+}
+
+static void formatAutoReplyTemplate(char *output, size_t output_size, const char *template_text,
+                                    const char *sender, uint8_t hops, const char *location) {
+  size_t output_len = 0;
+  char hops_text[4];
+  snprintf(hops_text, sizeof(hops_text), "%u", hops);
+  for (const char *cursor = template_text; *cursor && output_len < output_size - 1;) {
+    if (strncmp(cursor, "{name}", 6) == 0) {
+      appendAutoReplyTemplateText(output, output_size, output_len, sender);
+      cursor += 6;
+    } else if (strncmp(cursor, "{plz}", 5) == 0) {
+      appendAutoReplyTemplateText(output, output_size, output_len, location);
+      cursor += 5;
+    } else if (strncmp(cursor, "{hops}", 6) == 0) {
+      appendAutoReplyTemplateText(output, output_size, output_len, hops_text);
+      cursor += 6;
+    } else {
+      output[output_len++] = *cursor++;
+    }
+  }
+  output[output_len] = 0;
+}
+
 void MyMesh::echoAutomaticReplyToApp(uint8_t channel_idx, const char *reply, int reply_len) {
   char full_text[MAX_TEXT_LEN + 1];
   int written = snprintf(full_text, sizeof(full_text), "%s: %.*s", _prefs.node_name, reply_len, reply);
@@ -732,8 +761,8 @@ void MyMesh::maybeSendAutomaticChannelReply(const mesh::GroupChannel &channel, m
 
   char reply[MAX_TEXT_LEN + 1];
   int written;
+  uint8_t hops = pkt->isRouteFlood() ? (pkt->path_len & 0x3F) : 0;
   if (is_pong) {
-    uint8_t hops = pkt->isRouteFlood() ? (pkt->path_len & 0x3F) : 0;
     if (_prefs.auto_pong_location[0]) {
       written = snprintf(reply, sizeof(reply), "@[%s] Pong - %u Hops in %s", sender, hops,
                          _prefs.auto_pong_location);
@@ -741,7 +770,10 @@ void MyMesh::maybeSendAutomaticChannelReply(const mesh::GroupChannel &channel, m
       written = snprintf(reply, sizeof(reply), "@[%s] Pong - %u Hops", sender, hops);
     }
   } else {
-    written = snprintf(reply, sizeof(reply), "@[%s] %s", sender, reply_text);
+    char formatted_reply[MAX_TEXT_LEN + 1];
+    formatAutoReplyTemplate(formatted_reply, sizeof(formatted_reply), reply_text, sender, hops,
+                            _prefs.auto_pong_location);
+    written = snprintf(reply, sizeof(reply), "@[%s] %s", sender, formatted_reply);
   }
   if (written <= 0) return;
 

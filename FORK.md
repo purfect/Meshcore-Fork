@@ -1,6 +1,6 @@
 # Meshcore-Fork: reguläre Companion-Firmware
 
-Aktuelle Fork-Version: `v1.0.7`
+Aktuelle Fork-Version: `v1.0.8`
 
 Dieser Fork basiert auf der offiziellen MeshCore-Firmware und behält die normalen
 Companion-Schnittstellen bei. Damit kann das benachbarte `Meshcore-Dashboard` über
@@ -75,6 +75,14 @@ autoreply set 2 test wetter Der Wetterdienst ist momentan offline.
 autoreply delete 1               Regel in Slot 1 löschen
 autoreply clear                  Alle Auto-Reply-Regeln löschen
 ```
+
+Im Antworttext einer Auto-Reply-Regel stehen folgende Platzhalter zur Verfügung:
+
+- `{name}`: Name des Absenders
+- `{plz}`: gespeicherte Auto-Pong-Ortsangabe
+- `{hops}`: Hop-Anzahl der eingegangenen Nachricht
+
+Beispiel: `Hallo {name}, Standort {plz}, Nachricht über {hops} Hops empfangen.`
 
 Syntax für eine Regel:
 
