@@ -1,4 +1,4 @@
-name: Build Companion Firmwares
+name: Build End-Device Companion Firmwares
 
 permissions:
   contents: write
@@ -6,11 +6,22 @@ permissions:
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     tags:
       - 'companion-*'
+    paths:
+      - 'examples/companion_radio/**'
+      - 'src/**'
+      - 'variants/**'
+      - 'platformio.ini'
+      - 'build.sh'
+      - '.github/actions/setup-build-environment/**'
+      - '.github/workflows/build-companion-firmwares.yml'
+      - '.github/workflows/firmware-builder.yml'
 
 jobs:
-  build-companion-firmwares:
+  build-end-device-firmwares:
     uses: ./.github/workflows/firmware-builder.yml
     with:
       firmware_type: 'companion'

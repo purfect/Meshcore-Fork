@@ -203,6 +203,12 @@ private:
   void checkCLIRescueCmd();
   void checkSerialInterface();
   bool isValidClientRepeatFreq(uint32_t f) const;
+#ifdef AUTO_REPLY_ENABLED
+  void maybeSendAutomaticChannelReply(const mesh::GroupChannel &channel, mesh::Packet *pkt,
+                                      const char *text);
+  void handleAutomaticReplyCLI();
+  void printAutomaticReplyConfig();
+#endif
 
   // helpers, short-cuts
   void saveChannels() { _store->saveChannels(this); }
@@ -224,11 +230,14 @@ private:
   bool _iter_started;
   bool _cli_rescue;
   bool send_unscoped;   // force un-scoped flood (instead of using send_scope)
-  char cli_command[80];
+  char cli_command[192];
   uint8_t app_target_ver;
   uint8_t *sign_data;
   uint32_t sign_data_len;
   unsigned long dirty_contacts_expiry;
+#ifdef AUTO_REPLY_ENABLED
+  unsigned long auto_reply_cooldowns[MAX_AUTO_REPLY_RULES + 1];
+#endif
 
   TransportKey send_scope;
 

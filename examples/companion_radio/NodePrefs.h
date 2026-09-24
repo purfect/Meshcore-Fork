@@ -9,6 +9,32 @@
 #define ADVERT_LOC_NONE       0
 #define ADVERT_LOC_SHARE      1
 
+#ifndef AUTO_REPLY_ENABLED
+#define AUTO_REPLY_ENABLED 1
+#endif
+
+#define MAX_AUTO_REPLY_RULES 4
+
+class AutoReplyRulePrefs : public ConfigSerializer {
+protected:
+  void structure() override {
+    def("channel", channel, sizeof(channel));
+    def("keyword", keyword, sizeof(keyword));
+    def("text", text, sizeof(text));
+  }
+
+public:
+  char channel[32] = {0};
+  char keyword[32] = {0};
+  char text[96] = {0};
+
+  void clear() {
+    channel[0] = 0;
+    keyword[0] = 0;
+    text[0] = 0;
+  }
+};
+
 class NodePrefs : public ConfigSerializer {  // persisted to file
 public:
   float airtime_factor = 0;
@@ -40,6 +66,9 @@ public:
   uint8_t autoadd_max_hops = 0;  // 0 = no limit, 1 = direct (0 hops), N = up to N-1 hops (max 64)
   char default_scope_name[31];
   uint8_t default_scope_key[16];
+  uint8_t auto_pong_enabled = 0;
+  char auto_pong_location[24] = {0};
+  AutoReplyRulePrefs auto_reply_rules[MAX_AUTO_REPLY_RULES];
 
 private:
   class RadioPrefs : public ConfigSerializer {  // COPIED from CommonCLI (for now)
@@ -121,6 +150,22 @@ private:
   };
   CompanionPrefs companion;
 
+  class AutomaticReplyPrefs : public ConfigSerializer {
+    NodePrefs* _parent;
+  protected:
+    void structure() override {
+      def("pong", _parent->auto_pong_enabled);
+      def("location", _parent->auto_pong_location, sizeof(_parent->auto_pong_location));
+      def("rule0", _parent->auto_reply_rules[0]);
+      def("rule1", _parent->auto_reply_rules[1]);
+      def("rule2", _parent->auto_reply_rules[2]);
+      def("rule3", _parent->auto_reply_rules[3]);
+    }
+  public:
+    AutomaticReplyPrefs(NodePrefs* parent) : _parent(parent) { }
+  };
+  AutomaticReplyPrefs automatic_reply;
+
 protected:
   void structure() override {
     def("name", node_name, sizeof(node_name));
@@ -132,9 +177,12 @@ protected:
     def("gps", gps);
     def("repeat", repeat);
     def("comp", companion);
+    def("autoreply", automatic_reply);
   }
 public:
-  NodePrefs() : radio(this), gps(this), companion(this) {
+  NodePrefs() : radio(this), gps(this), companion(this)
+    , automatic_reply(this)
+  {
     node_name[0] = 0;
     default_scope_name[0] = 0;
     memset(default_scope_key, 0, sizeof(default_scope_key));

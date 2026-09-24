@@ -1,3 +1,126 @@
+> **Hinweis zu diesem Fork:** Die Firmware ist als reguläre MeshCore-Companion-Firmware
+> für unterstützte Endgeräte gedacht. Hinweise zum Build für das Seeed XIAO ESP32-S3
+> mit Wio-SX1262 sowie zum autonomen Auto-Pong/Auto-Reply ohne verbundene App
+> stehen in [FORK.md](./FORK.md).
+
+## Windows 11: Firmware auf den Seeed XIAO ESP32-S3 flashen
+
+Diese Anleitung gilt für den **Seeed XIAO ESP32-S3 mit Wio-SX1262**. Benötigt
+werden ein USB-Datenkabel, ein freier USB-Anschluss und Windows 11.
+
+### 1. Das richtige Firmware-Paket herunterladen
+
+Unter **GitHub → Actions → Build End-Device Companion Firmwares** den neuesten
+erfolgreichen Lauf öffnen und unten unter **Artifacts** das gewünschte Paket
+herunterladen:
+
+- `Xiao_S3_WIO_companion_radio_usb`: Verbindung zur App über USB
+- `Xiao_S3_WIO_companion_radio_ble`: Verbindung zur App über Bluetooth LE
+
+Das ZIP-Artifact entpacken. Für ESP32-Geräte enthält es normalerweise zwei
+Dateien:
+
+- `*-merged.bin`: vollständige Erstinstallation, Flash-Adresse `0x0`
+- `*.bin` ohne `-merged`: Firmware-Update, Flash-Adresse `0x10000`
+
+Die lokal gebauten Dateien liegen entsprechend unter `out/`.
+
+### 2. Python und esptool installieren
+
+Falls der Befehl `py` noch nicht vorhanden ist, Python von
+[python.org](https://www.python.org/downloads/windows/) installieren. Danach ein
+neues PowerShell-Fenster öffnen und esptool installieren:
+
+```powershell
+py -m pip install --upgrade esptool
+```
+
+### 3. XIAO in den Bootloader-Modus versetzen
+
+1. Das XIAO mit einem **USB-Datenkabel** am PC anschließen.
+2. Die Taste **BOOT** gedrückt halten.
+3. Die Taste **RESET** kurz drücken und wieder loslassen.
+4. Anschließend **BOOT** loslassen.
+
+Im Geräte-Manager unter **Anschlüsse (COM & LPT)** erscheint nun ein COM-Port.
+Die verfügbaren Ports lassen sich auch in PowerShell anzeigen:
+
+```powershell
+[System.IO.Ports.SerialPort]::GetPortNames()
+```
+
+In den folgenden Beispielen muss `COM7` durch diesen Port und der Dateiname durch
+den tatsächlich heruntergeladenen Namen ersetzt werden.
+
+### 4a. Vollständige Erstinstallation
+
+Die `-merged.bin` wird ab Adresse `0x0` geschrieben:
+
+```powershell
+py -m esptool --chip esp32s3 --port COM7 --baud 460800 write_flash 0x0 .\Xiao_S3_WIO_companion_radio_usb-firmware-merged.bin
+```
+
+Falls das Gerät vorher eine andere Firmware hatte oder nicht mehr sauber startet,
+kann der Flash zuerst vollständig gelöscht werden:
+
+```powershell
+py -m esptool --chip esp32s3 --port COM7 erase_flash
+```
+
+**Achtung:** `erase_flash` löscht Identität, Kanäle, Einstellungen und vorhandene
+Auto-Reply-Regeln. Danach erneut die `-merged.bin` flashen.
+
+### 4b. Vorhandene Installation aktualisieren
+
+Für ein normales Update die Datei **ohne** `-merged` bei Adresse `0x10000`
+schreiben. Vorher nicht `erase_flash` ausführen:
+
+```powershell
+py -m esptool --chip esp32s3 --port COM7 --baud 460800 write_flash 0x10000 .\Xiao_S3_WIO_companion_radio_usb-firmware.bin
+```
+
+Nach `Hash of data verified` das XIAO einmal mit **RESET** neu starten. Falls der
+Port nicht geöffnet werden kann, alle seriellen Monitore, Browser-Tabs und Apps
+schließen, die den COM-Port verwenden, und den Bootloader-Modus erneut aktivieren.
+
+### 5. App verbinden und Auto-Antworten konfigurieren
+
+- Bei der USB-Firmware das Gerät im MeshCore-Dashboard über den seriellen
+  USB-Port verbinden.
+- Bei der BLE-Firmware das Gerät in der MeshCore-App über Bluetooth verbinden.
+
+Auto-Pong und Auto-Reply laufen anschließend auch ohne verbundene App. Zum
+Konfigurieren innerhalb der ersten acht Sekunden nach dem Start den Benutzerknopf
+lange drücken und eine serielle Konsole mit **115200 Baud** öffnen. Die Konsole
+muss beim Drücken von Enter ein Wagenrücklaufzeichen (`CR`) senden.
+
+```text
+autopong on
+autopong off
+autopong location 12345
+autoreply set 1 public hallo Hallo, ich bin gerade nicht erreichbar.
+autoreply list
+reboot
+```
+
+Alle Befehle und deren genaue Syntax stehen in [FORK.md](./FORK.md).
+
+### Andere Geräte und Dateiformate
+
+Die GitHub Action erzeugt pro Gerät nur die tatsächlich flashbaren Dateien:
+
+| Datei | Typische Plattform | Installation unter Windows 11 |
+| --- | --- | --- |
+| `-merged.bin` | ESP32 | Mit esptool bei Adresse `0x0` flashen |
+| `.bin` | ESP32/STM32/RP2040 | Gerätespezifischer Updater; bei diesem ESP32 Update ab `0x10000` |
+| `.uf2` | nRF52/RP2040 | Gerät in den UF2-Bootloader versetzen und auf das USB-Laufwerk kopieren |
+| `.zip` | nRF52 | DFU-Paket für einen kompatiblen nRF52-DFU-Updater |
+| `.hex` | STM32 | Mit STM32CubeProgrammer und den Vorgaben des Geräteherstellers flashen |
+
+Immer nur das Artifact verwenden, dessen Gerätename exakt zur vorhandenen
+Hardware passt. Eine Firmware für ein ähnlich aussehendes Board kann andere
+GPIOs oder einen anderen Funkchip ansprechen.
+
 ## About MeshCore
 
 MeshCore is a lightweight, portable C++ library that enables multi-hop packet routing for embedded projects using LoRa and other packet radios. It is designed for developers who want to create resilient, decentralized communication networks that work without the internet.

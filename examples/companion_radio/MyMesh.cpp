@@ -587,7 +587,126 @@ void MyMesh::onChannelMessageRecv(const mesh::GroupChannel &channel, mesh::Packe
   }
   if (_ui) _ui->newMsg(path_len, channel_name, text, offline_queue_len);
 #endif
+
+#ifdef AUTO_REPLY_ENABLED
+  maybeSendAutomaticChannelReply(channel, pkt, text);
+#endif
 }
+
+#ifdef AUTO_REPLY_ENABLED
+#ifndef AUTO_REPLY_COOLDOWN_MS
+#define AUTO_REPLY_COOLDOWN_MS 15000
+#endif
+#ifndef AUTO_PONG_CHANNEL
+#define AUTO_PONG_CHANNEL "ping"
+#endif
+
+static char asciiLower(char c) {
+  return c >= 'A' && c <= 'Z' ? c + ('a' - 'A') : c;
+}
+
+static bool textEqualsIgnoreCase(const char *left, const char *right) {
+  while (*left && *right) {
+    if (asciiLower(*left++) != asciiLower(*right++)) return false;
+  }
+  return *left == 0 && *right == 0;
+}
+
+static bool textContainsIgnoreCase(const char *text, const char *keyword) {
+  if (!keyword[0]) return false;
+  for (; *text; text++) {
+    const char *candidate = text;
+    const char *expected = keyword;
+    while (*candidate && *expected && asciiLower(*candidate) == asciiLower(*expected)) {
+      candidate++;
+      expected++;
+    }
+    if (!*expected) return true;
+  }
+  return false;
+}
+
+static bool textStartsWithIgnoreCase(const char *text, const char *prefix) {
+  while (*prefix) {
+    if (!*text || asciiLower(*text++) != asciiLower(*prefix++)) return false;
+  }
+  return true;
+}
+
+static const char *skipChannelMarker(const char *name) {
+  return name[0] == '#' ? &name[1] : name;
+}
+
+void MyMesh::maybeSendAutomaticChannelReply(const mesh::GroupChannel &channel, mesh::Packet *pkt,
+                                             const char *text) {
+  uint8_t channel_idx = findChannelIdx(channel);
+  ChannelDetails details;
+  if (!getChannel(channel_idx, details)) return;
+
+  const char *separator = strchr(text, ':');
+  if (!separator || separator == text) return;
+
+  char sender[33];
+  size_t sender_len = separator - text;
+  while (sender_len > 0 && text[sender_len - 1] == ' ') sender_len--;
+  if (sender_len == 0 || sender_len >= sizeof(sender)) return;
+  memcpy(sender, text, sender_len);
+  sender[sender_len] = 0;
+  if (textEqualsIgnoreCase(sender, _prefs.node_name)) return;
+
+  const char *body = separator + 1;
+  while (*body == ' ') body++;
+
+  const char *reply_text = NULL;
+  bool is_pong = false;
+  int matched_rule = 0;
+  const char *channel_name = skipChannelMarker(details.name);
+  if (_prefs.auto_pong_enabled &&
+      textEqualsIgnoreCase(channel_name, skipChannelMarker(AUTO_PONG_CHANNEL)) &&
+      textStartsWithIgnoreCase(body, "ping")) {
+    is_pong = true;
+  }
+  else {
+    for (int i = 0; i < MAX_AUTO_REPLY_RULES; i++) {
+      AutoReplyRulePrefs &rule = _prefs.auto_reply_rules[i];
+      if (rule.channel[0] && rule.keyword[0] && rule.text[0] &&
+          textEqualsIgnoreCase(channel_name, skipChannelMarker(rule.channel)) &&
+          textContainsIgnoreCase(body, rule.keyword)) {
+        reply_text = rule.text;
+        matched_rule = i + 1;
+        break;
+      }
+    }
+    if (!reply_text) return;
+  }
+
+  unsigned long now_millis = millis();
+  if (auto_reply_cooldowns[matched_rule] != 0 &&
+      (unsigned long)(now_millis - auto_reply_cooldowns[matched_rule]) < AUTO_REPLY_COOLDOWN_MS) return;
+
+  char reply[MAX_TEXT_LEN + 1];
+  int written;
+  if (is_pong) {
+    uint8_t hops = pkt->isRouteFlood() ? (pkt->path_len & 0x3F) : 0;
+    if (_prefs.auto_pong_location[0]) {
+      written = snprintf(reply, sizeof(reply), "@[%s] Pong - %u Hops in %s", sender, hops,
+                         _prefs.auto_pong_location);
+    } else {
+      written = snprintf(reply, sizeof(reply), "@[%s] Pong - %u Hops", sender, hops);
+    }
+  } else {
+    written = snprintf(reply, sizeof(reply), "@[%s] %s", sender, reply_text);
+  }
+  if (written <= 0) return;
+
+  int reply_len = written < (int)sizeof(reply) ? written : sizeof(reply) - 1;
+  mesh::GroupChannel reply_channel = channel;
+  if (sendGroupMessage(getRTCClock()->getCurrentTime(), reply_channel, _prefs.node_name, reply,
+                       reply_len)) {
+    auto_reply_cooldowns[matched_rule] = now_millis;
+  }
+}
+#endif
 
 void MyMesh::onChannelDataRecv(const mesh::GroupChannel &channel, mesh::Packet *pkt, uint16_t data_type,
                                const uint8_t *data, size_t data_len) {
@@ -871,6 +990,9 @@ MyMesh::MyMesh(mesh::Radio &radio, mesh::RNG &rng, mesh::RTCClock &rtc, SimpleMe
   next_ack_idx = 0;
   sign_data = NULL;
   dirty_contacts_expiry = 0;
+#ifdef AUTO_REPLY_ENABLED
+  memset(auto_reply_cooldowns, 0, sizeof(auto_reply_cooldowns));
+#endif
   memset(advert_paths, 0, sizeof(advert_paths));
   memset(send_scope.key, 0, sizeof(send_scope.key));
   send_unscoped = false;
@@ -947,6 +1069,9 @@ void MyMesh::begin(bool has_display) {
   _prefs.tx_power_dbm = constrain(_prefs.tx_power_dbm, -9, MAX_LORA_TX_POWER);
   _prefs.gps_enabled = constrain(_prefs.gps_enabled, 0, 1);  // Ensure boolean 0 or 1
   _prefs.gps_interval = constrain(_prefs.gps_interval, 0, 86400);  // Max 24 hours
+#ifdef AUTO_REPLY_ENABLED
+  _prefs.auto_pong_enabled = constrain(_prefs.auto_pong_enabled, 0, 1);
+#endif
 
 #ifdef BLE_PIN_CODE // 123456 by default
   if (_prefs.ble_pin == 0) {
@@ -2027,6 +2152,98 @@ void MyMesh::enterCLIRescue() {
   Serial.println("========= CLI Rescue =========");
 }
 
+#ifdef AUTO_REPLY_ENABLED
+void MyMesh::printAutomaticReplyConfig() {
+  Serial.printf("  > Auto-Pong: %s, channel: #%s", _prefs.auto_pong_enabled ? "on" : "off",
+                skipChannelMarker(AUTO_PONG_CHANNEL));
+  if (_prefs.auto_pong_location[0]) Serial.printf(", location: %s", _prefs.auto_pong_location);
+  Serial.println();
+  Serial.println("  > Auto-Reply rules:");
+  bool any = false;
+  for (int i = 0; i < MAX_AUTO_REPLY_RULES; i++) {
+    AutoReplyRulePrefs &rule = _prefs.auto_reply_rules[i];
+    if (!rule.channel[0]) continue;
+    any = true;
+    Serial.printf("    %d: #%s | %s | %s\n", i + 1, skipChannelMarker(rule.channel),
+                  rule.keyword, rule.text);
+  }
+  if (!any) Serial.println("    (none)");
+}
+
+void MyMesh::handleAutomaticReplyCLI() {
+  if (strcmp(cli_command, "autopong") == 0 || strcmp(cli_command, "autoreply list") == 0) {
+    printAutomaticReplyConfig();
+    return;
+  }
+
+  if (strcmp(cli_command, "autopong on") == 0 || strcmp(cli_command, "autopong off") == 0) {
+    _prefs.auto_pong_enabled = strcmp(cli_command, "autopong on") == 0;
+    savePrefs();
+    Serial.printf("  > Auto-Pong %s\n", _prefs.auto_pong_enabled ? "enabled" : "disabled");
+    return;
+  }
+
+  if (strncmp(cli_command, "autopong location ", 18) == 0) {
+    const char *location = &cli_command[18];
+    if (strcmp(location, "clear") == 0 || strcmp(location, "-") == 0) location = "";
+    strncpy(_prefs.auto_pong_location, location, sizeof(_prefs.auto_pong_location) - 1);
+    _prefs.auto_pong_location[sizeof(_prefs.auto_pong_location) - 1] = 0;
+    savePrefs();
+    Serial.printf("  > Auto-Pong location: %s\n",
+                  _prefs.auto_pong_location[0] ? _prefs.auto_pong_location : "(none)");
+    return;
+  }
+
+  if (strcmp(cli_command, "autoreply clear") == 0) {
+    for (int i = 0; i < MAX_AUTO_REPLY_RULES; i++) _prefs.auto_reply_rules[i].clear();
+    savePrefs();
+    Serial.println("  > all Auto-Reply rules removed");
+    return;
+  }
+
+  int slot = 0;
+  if (sscanf(cli_command, "autoreply delete %d", &slot) == 1) {
+    if (slot < 1 || slot > MAX_AUTO_REPLY_RULES) {
+      Serial.printf("  Error: slot must be 1-%d\n", MAX_AUTO_REPLY_RULES);
+      return;
+    }
+    _prefs.auto_reply_rules[slot - 1].clear();
+    savePrefs();
+    Serial.printf("  > Auto-Reply rule %d removed\n", slot);
+    return;
+  }
+
+  char channel[32];
+  char keyword[32];
+  char reply[96];
+  if (sscanf(cli_command, "autoreply set %d %31s %31s %95[^\r\n]", &slot, channel, keyword,
+             reply) == 4) {
+    if (slot < 1 || slot > MAX_AUTO_REPLY_RULES) {
+      Serial.printf("  Error: slot must be 1-%d\n", MAX_AUTO_REPLY_RULES);
+      return;
+    }
+    AutoReplyRulePrefs &rule = _prefs.auto_reply_rules[slot - 1];
+    strncpy(rule.channel, skipChannelMarker(channel), sizeof(rule.channel) - 1);
+    rule.channel[sizeof(rule.channel) - 1] = 0;
+    strncpy(rule.keyword, keyword, sizeof(rule.keyword) - 1);
+    rule.keyword[sizeof(rule.keyword) - 1] = 0;
+    strncpy(rule.text, reply, sizeof(rule.text) - 1);
+    rule.text[sizeof(rule.text) - 1] = 0;
+    savePrefs();
+    Serial.printf("  > Auto-Reply rule %d saved\n", slot);
+    return;
+  }
+
+  Serial.println("  Error: usage:");
+  Serial.println("    autopong [on|off]");
+  Serial.println("    autopong location <text|clear>");
+  Serial.println("    autoreply list");
+  Serial.println("    autoreply set <1-4> <channel> <keyword> <reply text>");
+  Serial.println("    autoreply delete <1-4>");
+  Serial.println("    autoreply clear");
+}
+#endif
+
 void MyMesh::checkCLIRescueCmd() {
   int len = strlen(cli_command);
   while (Serial.available() && len < sizeof(cli_command)-1) {
@@ -2044,6 +2261,11 @@ void MyMesh::checkCLIRescueCmd() {
   if (len > 0 && cli_command[len - 1] == '\r') {  // received complete line
     cli_command[len - 1] = 0;  // replace newline with C string null terminator
 
+#ifdef AUTO_REPLY_ENABLED
+    if (strncmp(cli_command, "autopong", 8) == 0 || strncmp(cli_command, "autoreply", 9) == 0) {
+      handleAutomaticReplyCLI();
+    } else
+#endif
     if (memcmp(cli_command, "set ", 4) == 0) {
       const char* config = &cli_command[4];
       if (memcmp(config, "pin ", 4) == 0) {
