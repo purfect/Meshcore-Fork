@@ -208,7 +208,13 @@ private:
                                       const char *text);
   void handleAutomaticReplyCLI();
   void printAutomaticReplyConfig();
+#if !defined(ENABLE_USB_INTERFACE)
+  // Serial UART is free of the binary companion protocol on BLE-only builds, so
+  // autopong/autoreply can be configured any time, without the CLI Rescue button dance.
+  void checkAutoReplyCLI();
 #endif
+#endif
+
 
   // helpers, short-cuts
   void saveChannels() { _store->saveChannels(this); }

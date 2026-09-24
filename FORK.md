@@ -1,6 +1,6 @@
 # Meshcore-Fork: reguläre Companion-Firmware
 
-Aktuelle Fork-Version: `v1.0.3`
+Aktuelle Fork-Version: `v1.0.4`
 
 Dieser Fork basiert auf der offiziellen MeshCore-Firmware und behält die normalen
 Companion-Schnittstellen bei. Damit kann das benachbarte `Meshcore-Dashboard` über
@@ -11,7 +11,9 @@ USB oder Bluetooth verbunden werden.
 Alle regulären USB- und Bluetooth-Companion-Ziele enthalten zusätzlich eine
 autonome Antwortlogik. Sie arbeitet direkt im Funkgerät und benötigt keine
 geöffnete oder verbundene App. Dazu gehört unter anderem das Seeed XIAO ESP32-S3
-mit Wio-SX1262:
+mit Wio-SX1262. Auto-Pong ist ab Werk aktiviert. Die Funktion existiert
+ausschließlich in der Companion-Firmware; Repeater, Room-Server und Sensoren
+leiten Nachrichten weiterhin nur normal weiter und antworten nicht selbst.
 
 - Auto-Pong kann über die lokale serielle Kommandozeile ein- und ausgeschaltet
   werden. Im Kanal `#ping` beantwortet es Nachrichten mit dem Keyword `ping` mit
@@ -29,10 +31,18 @@ dort abgeschaltet werden, damit nicht Firmware und Dashboard doppelt antworten.
 
 ## Konfiguration über die Kommandozeile
 
-Innerhalb der ersten acht Sekunden nach dem Start den Benutzerknopf lange drücken,
-um den lokalen `CLI Rescue`-Modus zu öffnen. Danach über den seriellen USB-Port mit
-115200 Baud verbinden. Nach Änderungen das Gerät mit `reboot` neu starten, um den
-normalen Companion-Modus wieder zu verwenden.
+Auf reinen Bluetooth-Zielen (`*_companion_radio_ble`) sind `autopong`- und
+`autoreply`-Befehle jederzeit über den seriellen USB-Debug-Port (115200 Baud)
+verfügbar, solange kein Dashboard per BLE verbunden ist – ganz ohne
+Knopfdruck oder Neustart. Andere Befehle bleiben dort weiterhin gesperrt.
+
+Für alle übrigen Befehle (`set`, `ls`, `cat`, `rm`, `rebuild`, `erase`, `reboot`, …)
+sowie auf USB-Zielen (`*_companion_radio_usb`, dort belegt das Companion-Protokoll
+den seriellen Port exklusiv) muss weiterhin innerhalb der ersten acht Sekunden nach
+dem Start der Benutzerknopf lange gedrückt werden, um den lokalen `CLI Rescue`-Modus
+zu öffnen. Danach über den seriellen Port mit 115200 Baud verbinden. Nach Änderungen
+das Gerät mit `reboot` neu starten, um den normalen Companion-Modus wieder zu
+verwenden.
 
 ```text
 autopong                         Aktuellen Zustand und Regeln anzeigen

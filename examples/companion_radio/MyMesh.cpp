@@ -2242,6 +2242,37 @@ void MyMesh::handleAutomaticReplyCLI() {
   Serial.println("    autoreply delete <1-4>");
   Serial.println("    autoreply clear");
 }
+
+#if !defined(ENABLE_USB_INTERFACE)
+// Reads plain-text autopong/autoreply commands from the debug UART at any time (not just
+// during the boot-time CLI Rescue window). Safe only when Serial isn't also carrying the
+// binary companion protocol, i.e. BLE-only builds.
+void MyMesh::checkAutoReplyCLI() {
+  int len = strlen(cli_command);
+  while (Serial.available() && len < (int)sizeof(cli_command) - 1) {
+    char c = Serial.read();
+    if (c != '\n') {
+      cli_command[len++] = c;
+      cli_command[len] = 0;
+    }
+    Serial.print(c);  // echo
+  }
+  if (len == (int)sizeof(cli_command) - 1) {  // command buffer full
+    cli_command[sizeof(cli_command) - 1] = '\r';
+  }
+
+  if (len > 0 && cli_command[len - 1] == '\r') {  // received complete line
+    cli_command[len - 1] = 0;  // replace newline with C string null terminator
+
+    if (strncmp(cli_command, "autopong", 8) == 0 || strncmp(cli_command, "autoreply", 9) == 0) {
+      handleAutomaticReplyCLI();
+    } else if (cli_command[0] != 0) {
+      Serial.println("  Error: only 'autopong'/'autoreply' available here. Use CLI Rescue (long-press at boot) for full CLI.");
+    }
+    cli_command[0] = 0;  // reset command buffer
+  }
+}
+#endif
 #endif
 
 void MyMesh::checkCLIRescueCmd() {
@@ -2455,6 +2486,9 @@ void MyMesh::loop() {
     checkCLIRescueCmd();
   } else {
     checkSerialInterface();
+#if defined(AUTO_REPLY_ENABLED) && !defined(ENABLE_USB_INTERFACE)
+    checkAutoReplyCLI();
+#endif
   }
 
   // is there are pending dirty contacts write needed?
