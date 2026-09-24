@@ -1,6 +1,6 @@
 # Meshcore-Fork: reguläre Companion-Firmware
 
-Aktuelle Fork-Version: `v1.0.6`
+Aktuelle Fork-Version: `v1.0.7`
 
 Dieser Fork basiert auf der offiziellen MeshCore-Firmware und behält die normalen
 Companion-Schnittstellen bei. Damit kann das benachbarte `Meshcore-Dashboard` über
@@ -42,8 +42,10 @@ je nach App-Version) öffnen:
 - `autopong_loc` auf den gewünschten Text (z. B. `01705`) setzen, oder auf
   `clear`/`-`, um die Ortsangabe zu entfernen
 
-Auto-Reply-Regeln (Kanal/Keyword/Antworttext) sind aktuell nur über die
-Kommandozeile konfigurierbar (siehe unten).
+Die vier Auto-Reply-Regeln werden über das Lesezeichen-Hub-Modul
+`meshcore-autopong_location` verwaltet. Es verwendet die Companion-Befehle
+`GET_AUTO_REPLY_RULE` und `SET_AUTO_REPLY_RULE`; die Regeln bleiben nach einem
+Neustart erhalten.
 
 ## Konfiguration über die Kommandozeile
 

@@ -62,6 +62,8 @@
 #define CMD_SET_DEFAULT_FLOOD_SCOPE   63
 #define CMD_GET_DEFAULT_FLOOD_SCOPE   64
 #define CMD_SEND_RAW_PACKET           65
+#define CMD_GET_AUTO_REPLY_RULE        66
+#define CMD_SET_AUTO_REPLY_RULE        67
 
 // Stats sub-types for CMD_GET_STATS
 #define STATS_TYPE_CORE               0
@@ -96,6 +98,7 @@
 #define RESP_CODE_AUTOADD_CONFIG      25
 #define RESP_ALLOWED_REPEAT_FREQ      26
 #define RESP_CODE_CHANNEL_DATA_RECV   27
+#define RESP_CODE_AUTO_REPLY_RULE      30
 #define RESP_CODE_DEFAULT_FLOOD_SCOPE 28
 
 #define MAX_CHANNEL_DATA_LENGTH       (MAX_FRAME_SIZE - 9)
@@ -2039,6 +2042,56 @@ void MyMesh::handleCmdFrame(size_t len) {
     } else {
       writeErrFrame(ERR_CODE_ILLEGAL_ARG);
     }
+  } else if (cmd_frame[0] == CMD_GET_AUTO_REPLY_RULE && len == 2) {
+#ifdef AUTO_REPLY_ENABLED
+    uint8_t slot = cmd_frame[1];
+    if (slot < 1 || slot > MAX_AUTO_REPLY_RULES) {
+      writeErrFrame(ERR_CODE_ILLEGAL_ARG);
+    } else {
+      AutoReplyRulePrefs &rule = _prefs.auto_reply_rules[slot - 1];
+      int i = 0;
+      out_frame[i++] = RESP_CODE_AUTO_REPLY_RULE;
+      out_frame[i++] = slot;
+      StrHelper::strzcpy((char *)&out_frame[i], rule.channel, sizeof(rule.channel));
+      i += strlen((char *)&out_frame[i]) + 1;
+      StrHelper::strzcpy((char *)&out_frame[i], rule.keyword, sizeof(rule.keyword));
+      i += strlen((char *)&out_frame[i]) + 1;
+      StrHelper::strzcpy((char *)&out_frame[i], rule.text, sizeof(rule.text));
+      i += strlen((char *)&out_frame[i]) + 1;
+      _serial->writeFrame(out_frame, i);
+    }
+#else
+    writeErrFrame(ERR_CODE_UNSUPPORTED_CMD);
+#endif
+  } else if (cmd_frame[0] == CMD_SET_AUTO_REPLY_RULE && len >= 2) {
+#ifdef AUTO_REPLY_ENABLED
+    uint8_t slot = cmd_frame[1];
+    if (slot < 1 || slot > MAX_AUTO_REPLY_RULES) {
+      writeErrFrame(ERR_CODE_ILLEGAL_ARG);
+    } else if (len == 2) {
+      _prefs.auto_reply_rules[slot - 1].clear();
+      savePrefs();
+      writeOKFrame();
+    } else {
+      cmd_frame[len] = 0;
+      char *channel = (char *)&cmd_frame[2];
+      char *keyword = channel + strlen(channel) + 1;
+      char *text = keyword + strlen(keyword) + 1;
+      if (keyword >= (char *)&cmd_frame[len] || text >= (char *)&cmd_frame[len] ||
+          !channel[0] || !keyword[0] || !text[0]) {
+        writeErrFrame(ERR_CODE_ILLEGAL_ARG);
+      } else {
+        AutoReplyRulePrefs &rule = _prefs.auto_reply_rules[slot - 1];
+        StrHelper::strzcpy(rule.channel, skipChannelMarker(channel), sizeof(rule.channel));
+        StrHelper::strzcpy(rule.keyword, keyword, sizeof(rule.keyword));
+        StrHelper::strzcpy(rule.text, text, sizeof(rule.text));
+        savePrefs();
+        writeOKFrame();
+      }
+    }
+#else
+    writeErrFrame(ERR_CODE_UNSUPPORTED_CMD);
+#endif
   } else if (cmd_frame[0] == CMD_GET_ADVERT_PATH && len >= PUB_KEY_SIZE+2) {
     // FUTURE use:  uint8_t reserved = cmd_frame[1];
     uint8_t *pub_key = &cmd_frame[2];
