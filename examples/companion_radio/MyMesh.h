@@ -206,6 +206,7 @@ private:
 #ifdef AUTO_REPLY_ENABLED
   void maybeSendAutomaticChannelReply(const mesh::GroupChannel &channel, mesh::Packet *pkt,
                                       const char *text);
+  void echoAutomaticReplyToApp(uint8_t channel_idx, const char *reply, int reply_len);
   void handleAutomaticReplyCLI();
   void printAutomaticReplyConfig();
 #if !defined(ENABLE_USB_INTERFACE)
