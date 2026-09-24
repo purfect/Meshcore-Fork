@@ -134,7 +134,13 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           name: "${{ inputs.release_title_prefix }} ${{ env.GIT_TAG_VERSION }}"
-          body: ""
+          body: |
+            ## MeshCore Web Flasher (https://flasher.meshcore.co.uk/)
+
+            - `*-merged.bin`: Vollflash / Neuinstallation (ESP32) – diese Datei im Web Flasher unter "Custom Firmware" auswählen.
+            - `*.bin` (ohne `-merged`): Update, bestehende Einstellungen bleiben erhalten (ESP32).
+            - `*.uf2` / `*.zip`: nRF52-Boards (serielles DFU bzw. UF2-Kopie).
+            - `*.hex`: STM32-Boards.
           draft: ${{ inputs.release_draft }}
           files: out/*
 

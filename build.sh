@@ -138,13 +138,13 @@ build_firmware() {
     exit 1
   fi
 
-  # set firmware version string
+  # set firmware version string (still includes the commit hash for on-device display)
   # e.g: v1.0.0-abcdef
   FIRMWARE_VERSION_STRING="${FIRMWARE_VERSION}-${COMMIT_HASH}"
 
-  # craft filename
-  # e.g: RAK_4631_Repeater-v1.0.0-SHA
-  FIRMWARE_FILENAME="$1-${FIRMWARE_VERSION_STRING}"
+  # craft filename without the commit hash so release assets stay stable across rebuilds of the same tag
+  # e.g: RAK_4631_Repeater-v1.0.0
+  FIRMWARE_FILENAME="$1-${FIRMWARE_VERSION}"
 
   # add firmware version info to end of existing platformio build flags in environment vars
   export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -DFIRMWARE_BUILD_DATE='\"${FIRMWARE_BUILD_DATE}\"' -DFIRMWARE_VERSION='\"${FIRMWARE_VERSION_STRING}\"'"
