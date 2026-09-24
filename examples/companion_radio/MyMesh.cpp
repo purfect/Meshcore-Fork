@@ -637,6 +637,49 @@ static const char *skipChannelMarker(const char *name) {
   return name[0] == '#' ? &name[1] : name;
 }
 
+void MyMesh::echoAutomaticReplyToApp(uint8_t channel_idx, const char *reply, int reply_len) {
+  char full_text[MAX_TEXT_LEN + 1];
+  int written = snprintf(full_text, sizeof(full_text), "%s: %.*s", _prefs.node_name, reply_len, reply);
+  if (written <= 0) return;
+  int tlen = written < (int)sizeof(full_text) ? written : (int)sizeof(full_text) - 1;
+
+  int i = 0;
+  if (app_target_ver >= 3) {
+    out_frame[i++] = RESP_CODE_CHANNEL_MSG_RECV_V3;
+    out_frame[i++] = 0; // SNR n/a, this is our own send, not a reception
+    out_frame[i++] = 0; // reserved1
+    out_frame[i++] = 0; // reserved2
+  } else {
+    out_frame[i++] = RESP_CODE_CHANNEL_MSG_RECV;
+  }
+  out_frame[i++] = channel_idx;
+  out_frame[i++] = 0; // path_len: locally originated
+  out_frame[i++] = TXT_TYPE_PLAIN;
+  uint32_t timestamp = getRTCClock()->getCurrentTime();
+  memcpy(&out_frame[i], &timestamp, 4);
+  i += 4;
+  if (i + tlen > MAX_FRAME_SIZE) tlen = MAX_FRAME_SIZE - i;
+  memcpy(&out_frame[i], full_text, tlen);
+  i += tlen;
+  addToOfflineQueue(out_frame, i);
+
+  if (_serial->isConnected()) {
+    uint8_t frame[1];
+    frame[0] = PUSH_CODE_MSG_WAITING; // send push 'tickle'
+    _serial->writeFrame(frame, 1);
+  } else {
+#ifdef DISPLAY_CLASS
+    if (_ui) _ui->notify(UIEventType::channelMessage);
+#endif
+  }
+#ifdef DISPLAY_CLASS
+  const char *channel_name = "Unknown";
+  ChannelDetails channel_details;
+  if (getChannel(channel_idx, channel_details)) channel_name = channel_details.name;
+  if (_ui) _ui->newMsg(0, channel_name, full_text, offline_queue_len);
+#endif
+}
+
 void MyMesh::maybeSendAutomaticChannelReply(const mesh::GroupChannel &channel, mesh::Packet *pkt,
                                              const char *text) {
   uint8_t channel_idx = findChannelIdx(channel);
@@ -704,6 +747,9 @@ void MyMesh::maybeSendAutomaticChannelReply(const mesh::GroupChannel &channel, m
   if (sendGroupMessage(getRTCClock()->getCurrentTime(), reply_channel, _prefs.node_name, reply,
                        reply_len)) {
     auto_reply_cooldowns[matched_rule] = now_millis;
+    // LoRa radios can't hear their own TX, and the app is never told about this autonomous
+    // send, so without this the auto-reply would silently never appear in the channel view.
+    echoAutomaticReplyToApp(channel_idx, reply, reply_len);
   }
 }
 #endif
@@ -1929,10 +1975,21 @@ void MyMesh::handleCmdFrame(size_t len) {
   } else if (cmd_frame[0] == CMD_GET_CUSTOM_VARS) {
     out_frame[0] = RESP_CODE_CUSTOM_VARS;
     char *dp = (char *)&out_frame[1];
+#ifdef AUTO_REPLY_ENABLED
+    // expose autopong/autoreply as regular Custom Vars, reachable from the app
+    // (over BLE/USB) without needing a serial terminal
+    strcpy(dp, "autopong:");
+    dp = strchr(dp, 0);
+    strcpy(dp, _prefs.auto_pong_enabled ? "1" : "0");
+    dp = strchr(dp, 0);
+    *dp++ = ',';
+    strcpy(dp, "autopong_loc:");
+    dp = strchr(dp, 0);
+    strcpy(dp, _prefs.auto_pong_location);
+    dp = strchr(dp, 0);
+#endif
     for (int i = 0; i < sensors.getNumSettings() && dp - (char *)&out_frame[1] < 140; i++) {
-      if (i > 0) {
-        *dp++ = ',';
-      }
+      *dp++ = ',';
       strcpy(dp, sensors.getSettingName(i));
       dp = strchr(dp, 0);
       *dp++ = ':';
@@ -1946,6 +2003,22 @@ void MyMesh::handleCmdFrame(size_t len) {
     char *np = strchr(sp, ':'); // look for separator char
     if (np) {
       *np++ = 0; // modify 'cmd_frame', replace ':' with null
+#ifdef AUTO_REPLY_ENABLED
+      if (strcmp(sp, "autopong") == 0) {
+        _prefs.auto_pong_enabled = (np[0] == '1') ? 1 : 0;
+        savePrefs();
+        writeOKFrame();
+        return;
+      }
+      if (strcmp(sp, "autopong_loc") == 0) {
+        const char *location = (strcmp(np, "clear") == 0 || strcmp(np, "-") == 0) ? "" : np;
+        strncpy(_prefs.auto_pong_location, location, sizeof(_prefs.auto_pong_location) - 1);
+        _prefs.auto_pong_location[sizeof(_prefs.auto_pong_location) - 1] = 0;
+        savePrefs();
+        writeOKFrame();
+        return;
+      }
+#endif
       bool success = sensors.setSettingValue(sp, np);
       if (success) {
         #if ENV_INCLUDE_GPS == 1

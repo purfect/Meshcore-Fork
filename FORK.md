@@ -1,6 +1,6 @@
 # Meshcore-Fork: reguläre Companion-Firmware
 
-Aktuelle Fork-Version: `v1.0.4`
+Aktuelle Fork-Version: `v1.0.5`
 
 Dieser Fork basiert auf der offiziellen MeshCore-Firmware und behält die normalen
 Companion-Schnittstellen bei. Damit kann das benachbarte `Meshcore-Dashboard` über
@@ -28,6 +28,22 @@ Die normalen Companion-Schnittstellen bleiben erhalten, sodass das Gerät weiter
 per USB oder Bluetooth mit einer App verbunden werden kann. Wenn im Dashboard
 zusätzlich Auto-Pong oder eine identische Auto-Reply-Regel aktiv ist, sollte diese
 dort abgeschaltet werden, damit nicht Firmware und Dashboard doppelt antworten.
+
+## Konfiguration über die App (Custom Variables)
+
+`autopong` (an/aus) und `autopong_loc` (Ortsangabe, z. B. PLZ) stehen als normale
+**Custom Variables** im Companion-Protokoll zur Verfügung (`CMD_GET_CUSTOM_VARS` /
+`CMD_SET_CUSTOM_VAR`) und sind damit über die reguläre App per USB oder Bluetooth
+setzbar – ganz ohne serielles Terminal. In der App unter den Geräteeinstellungen
+den Bereich **"Custom Variables"** (bzw. "Node Variables"/"Advanced Settings",
+je nach App-Version) öffnen:
+
+- `autopong` auf `1` (an) oder `0` (aus) setzen
+- `autopong_loc` auf den gewünschten Text (z. B. `01705`) setzen, oder auf
+  `clear`/`-`, um die Ortsangabe zu entfernen
+
+Auto-Reply-Regeln (Kanal/Keyword/Antworttext) sind aktuell nur über die
+Kommandozeile konfigurierbar (siehe unten).
 
 ## Konfiguration über die Kommandozeile
 
