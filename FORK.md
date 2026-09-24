@@ -119,6 +119,14 @@ fest begrenzte Auswahl von höchstens fünf Companion-Zielen. So werden nicht me
 - `Heltec_v3_companion_radio_ble`
 - `RAK_4631_companion_radio_ble`
 
+Bei einem manuellen Start über **Actions → Build End-Device Companion Firmwares
+→ Run workflow** erscheint ein Dropdown. Dort kann gezielt der Seeed XIAO
+ESP32-S3 mit Wio-SX1262, der Heltec V3 oder der RAK4631 ausgewählt werden, jeweils
+als USB-, BLE- oder kombinierter Build. Zusätzlich steht das Preset **Alle fünf
+Release-Ziele** zur Verfügung. Standardmäßig werden beim manuellen Start nur die
+beiden XIAO-Varianten gebaut. Tag- und Release-Builds verwenden unabhängig vom
+Dropdown immer die fünf oben aufgeführten Release-Ziele.
+
 Damit entstehen für den Seeed XIAO ESP32-S3 mit Wio-SX1262 sowohl die normale
 Update-Datei als auch die vollständige `-merged.bin` für USB und BLE. Bei einem
 veröffentlichten Release werden die Firmware-Dateien an genau diesen Release

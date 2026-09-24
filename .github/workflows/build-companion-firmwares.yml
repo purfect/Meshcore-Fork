@@ -5,6 +5,23 @@ permissions:
 
 on:
   workflow_dispatch:
+    inputs:
+      target_preset:
+        description: 'Gerät und Verbindung auswählen'
+        required: true
+        default: 'Seeed XIAO ESP32-S3 Wio-SX1262 (USB + BLE)'
+        type: choice
+        options:
+          - 'Seeed XIAO ESP32-S3 Wio-SX1262 (USB + BLE)'
+          - 'Seeed XIAO ESP32-S3 Wio-SX1262 (nur USB)'
+          - 'Seeed XIAO ESP32-S3 Wio-SX1262 (nur BLE)'
+          - 'Heltec V3 (USB + BLE)'
+          - 'Heltec V3 (nur USB)'
+          - 'Heltec V3 (nur BLE)'
+          - 'RAK4631 (USB + BLE)'
+          - 'RAK4631 (nur USB)'
+          - 'RAK4631 (nur BLE)'
+          - 'Alle fünf Release-Ziele'
   push:
     tags:
       - '**'
@@ -17,15 +34,66 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  select-firmware-targets:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.select.outputs.targets }}
+    steps:
+      - name: Select requested firmware targets
+        id: select
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TARGET_PRESET: ${{ inputs.target_preset }}
+        shell: bash
+        run: |
+          if [[ "$EVENT_NAME" != "workflow_dispatch" ]]; then
+            TARGET_PRESET='Alle fünf Release-Ziele'
+          fi
+
+          case "$TARGET_PRESET" in
+            'Seeed XIAO ESP32-S3 Wio-SX1262 (USB + BLE)')
+              TARGETS='["Xiao_S3_WIO_companion_radio_usb","Xiao_S3_WIO_companion_radio_ble"]'
+              ;;
+            'Seeed XIAO ESP32-S3 Wio-SX1262 (nur USB)')
+              TARGETS='["Xiao_S3_WIO_companion_radio_usb"]'
+              ;;
+            'Seeed XIAO ESP32-S3 Wio-SX1262 (nur BLE)')
+              TARGETS='["Xiao_S3_WIO_companion_radio_ble"]'
+              ;;
+            'Heltec V3 (USB + BLE)')
+              TARGETS='["Heltec_v3_companion_radio_usb","Heltec_v3_companion_radio_ble"]'
+              ;;
+            'Heltec V3 (nur USB)')
+              TARGETS='["Heltec_v3_companion_radio_usb"]'
+              ;;
+            'Heltec V3 (nur BLE)')
+              TARGETS='["Heltec_v3_companion_radio_ble"]'
+              ;;
+            'RAK4631 (USB + BLE)')
+              TARGETS='["RAK_4631_companion_radio_usb","RAK_4631_companion_radio_ble"]'
+              ;;
+            'RAK4631 (nur USB)')
+              TARGETS='["RAK_4631_companion_radio_usb"]'
+              ;;
+            'RAK4631 (nur BLE)')
+              TARGETS='["RAK_4631_companion_radio_ble"]'
+              ;;
+            'Alle fünf Release-Ziele')
+              TARGETS='["Xiao_S3_WIO_companion_radio_usb","Xiao_S3_WIO_companion_radio_ble","Heltec_v3_companion_radio_usb","Heltec_v3_companion_radio_ble","RAK_4631_companion_radio_ble"]'
+              ;;
+            *)
+              echo "Unbekannte Geräteauswahl: $TARGET_PRESET" >&2
+              exit 1
+              ;;
+          esac
+
+          echo "targets=$TARGETS" >> "$GITHUB_OUTPUT"
+
   build-end-device-firmwares:
+    needs: select-firmware-targets
     uses: ./.github/workflows/firmware-builder.yml
     with:
       firmware_type: 'companion'
       release_title_prefix: 'Companion Firmware'
       release_draft: false
-      firmware_targets: >-
-        ["Xiao_S3_WIO_companion_radio_usb",
-        "Xiao_S3_WIO_companion_radio_ble",
-        "Heltec_v3_companion_radio_usb",
-        "Heltec_v3_companion_radio_ble",
-        "RAK_4631_companion_radio_ble"]
+      firmware_targets: ${{ needs.select-firmware-targets.outputs.targets }}
