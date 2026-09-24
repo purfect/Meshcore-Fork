@@ -47,6 +47,22 @@ union int32_Float_t
  
 //precision 0-9
 #define PRECISION 7
+
+static char* appendUnsignedDecimal(char* dest, uint32_t value) {
+  char reversed[10];  // uint32_t has at most 10 decimal digits
+  uint8_t digits = 0;
+
+  do {
+    reversed[digits++] = '0' + (value % 10);
+    value /= 10;
+  } while (value > 0);
+
+  while (digits > 0) {
+    *dest++ = reversed[--digits];
+  }
+  *dest = 0;
+  return dest;
+}
  
 //_ftoa function 
 static void _ftoa(float f, char *p, int *status) 
@@ -102,9 +118,7 @@ static void _ftoa(float f, char *p, int *status)
     *p++ = '0';
   else 
   {
-    ltoa(int_part, p, 10);
-    while (*p)
-      p++;
+    p = appendUnsignedDecimal(p, (uint32_t)int_part);
   }
   *p++ = '.';
   if (frac_part == 0)
