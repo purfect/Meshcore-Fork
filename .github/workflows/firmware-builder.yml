@@ -9,6 +9,10 @@ on:
       release_title_prefix:
         required: true
         type: string
+      release_draft:
+        required: false
+        default: true
+        type: boolean
 
 jobs:
 
@@ -81,10 +85,18 @@ jobs:
           merge-multiple: true
           path: out
 
-      - name: Create Release
+      - name: Create or update release for pushed tag
+        if: github.event_name != 'release'
         uses: softprops/action-gh-release@v3
         with:
           name: "${{ inputs.release_title_prefix }} ${{ env.GIT_TAG_VERSION }}"
           body: ""
-          draft: true
+          draft: ${{ inputs.release_draft }}
+          files: out/*
+
+      - name: Upload firmware to published release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
           files: out/*

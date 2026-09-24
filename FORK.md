@@ -107,8 +107,10 @@ pio project config | Select-String 'companion_radio_(usb|ble)'
 ## GitHub Actions und Firmware-Pakete
 
 Der Workflow `Build End-Device Companion Firmwares` baut bei manueller Ausführung,
-bei passenden Änderungen auf `main` und bei `companion-*`-Tags alle regulären USB-
-und BLE-Companion-Ziele. Er veröffentlicht pro Gerät nur die tatsächlich
+bei jedem neu gepushten Tag und beim Veröffentlichen eines GitHub-Releases alle
+regulären USB- und BLE-Companion-Ziele. Bei einem veröffentlichten Release werden
+die Firmware-Dateien an genau diesen Release angehängt, ohne dessen Titel oder
+Beschreibung zu überschreiben. Er veröffentlicht pro Gerät nur die tatsächlich
 flashbaren Dateien, die der jeweilige Mikrocontroller benötigt:
 
 - ESP32: `.bin` und `-merged.bin`

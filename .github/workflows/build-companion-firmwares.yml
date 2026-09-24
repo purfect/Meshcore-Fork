@@ -6,19 +6,15 @@ permissions:
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
     tags:
-      - 'companion-*'
-    paths:
-      - 'examples/companion_radio/**'
-      - 'src/**'
-      - 'variants/**'
-      - 'platformio.ini'
-      - 'build.sh'
-      - '.github/actions/setup-build-environment/**'
-      - '.github/workflows/build-companion-firmwares.yml'
-      - '.github/workflows/firmware-builder.yml'
+      - '**'
+  release:
+    types:
+      - published
+
+concurrency:
+  group: companion-firmware-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-end-device-firmwares:
@@ -26,3 +22,4 @@ jobs:
     with:
       firmware_type: 'companion'
       release_title_prefix: 'Companion Firmware'
+      release_draft: false
