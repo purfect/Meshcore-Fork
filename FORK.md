@@ -107,11 +107,22 @@ pio project config | Select-String 'companion_radio_(usb|ble)'
 ## GitHub Actions und Firmware-Pakete
 
 Der Workflow `Build End-Device Companion Firmwares` baut bei manueller Ausführung,
-bei jedem neu gepushten Tag und beim Veröffentlichen eines GitHub-Releases alle
-regulären USB- und BLE-Companion-Ziele. Bei einem veröffentlichten Release werden
-die Firmware-Dateien an genau diesen Release angehängt, ohne dessen Titel oder
-Beschreibung zu überschreiben. Er veröffentlicht pro Gerät nur die tatsächlich
-flashbaren Dateien, die der jeweilige Mikrocontroller benötigt:
+bei jedem neu gepushten Tag und beim Veröffentlichen eines GitHub-Releases eine
+fest begrenzte Auswahl von höchstens fünf Companion-Zielen. So werden nicht mehr
+über hundert Matrix-Jobs gestartet. Aktuell werden diese Ziele gebaut:
+
+- `Xiao_S3_WIO_companion_radio_usb`
+- `Xiao_S3_WIO_companion_radio_ble`
+- `Heltec_v3_companion_radio_usb`
+- `Heltec_v3_companion_radio_ble`
+- `RAK_4631_companion_radio_ble`
+
+Damit entstehen für den Seeed XIAO ESP32-S3 mit Wio-SX1262 sowohl die normale
+Update-Datei als auch die vollständige `-merged.bin` für USB und BLE. Bei einem
+veröffentlichten Release werden die Firmware-Dateien an genau diesen Release
+angehängt, ohne dessen Titel oder Beschreibung zu überschreiben. Pro Ziel werden
+nur die tatsächlich flashbaren Dateien veröffentlicht, die der jeweilige
+Mikrocontroller benötigt:
 
 - ESP32: `.bin` und `-merged.bin`
 - nRF52: `.uf2` und gegebenenfalls `.zip`

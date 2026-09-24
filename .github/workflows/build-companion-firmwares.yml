@@ -23,3 +23,9 @@ jobs:
       firmware_type: 'companion'
       release_title_prefix: 'Companion Firmware'
       release_draft: false
+      firmware_targets: >-
+        ["Xiao_S3_WIO_companion_radio_usb",
+        "Xiao_S3_WIO_companion_radio_ble",
+        "Heltec_v3_companion_radio_usb",
+        "Heltec_v3_companion_radio_ble",
+        "RAK_4631_companion_radio_ble"]

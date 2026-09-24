@@ -13,6 +13,10 @@ on:
         required: false
         default: true
         type: boolean
+      firmware_targets:
+        required: false
+        default: ''
+        type: string
 
 jobs:
 
@@ -30,12 +34,20 @@ jobs:
 
       - name: Get Build Targets
         id: get-build-targets
+        env:
+          REQUESTED_TARGETS: ${{ inputs.firmware_targets }}
         run: |
-          # get list of firmwares to build
-          TARGET_LIST=$(/usr/bin/env bash build.sh get-${{ inputs.firmware_type }}-firmwares-to-build)
-          
-          # convert targets separated by new line into a json array string
-          JSON_ARRAY=$(echo "$TARGET_LIST" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          if [[ -n "$REQUESTED_TARGETS" ]]; then
+            # A caller can explicitly limit the matrix to avoid building every supported board.
+            JSON_ARRAY=$(echo "$REQUESTED_TARGETS" | jq -c '
+              if type != "array" or length == 0 or length > 5 or any(.[]; type != "string")
+              then error("firmware_targets must contain between 1 and 5 target names")
+              else . end')
+          else
+            # Keep the reusable upstream default for workflows without an explicit target list.
+            TARGET_LIST=$(/usr/bin/env bash build.sh get-${{ inputs.firmware_type }}-firmwares-to-build)
+            JSON_ARRAY=$(echo "$TARGET_LIST" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          fi
           
           # use json array as targets result
           echo "targets=$JSON_ARRAY" >> $GITHUB_OUTPUT
@@ -47,6 +59,7 @@ jobs:
     strategy:
       matrix:
         target: ${{ fromJson(needs.generate-build-matrix.outputs.targets) }}
+      max-parallel: 5
       fail-fast: false # don't cancel other builds if one board fails to build
     steps:
 
