@@ -12,16 +12,11 @@ on:
         default: 'Seeed XIAO ESP32-S3 Wio-SX1262 (USB + BLE)'
         type: choice
         options:
-          - 'Seeed XIAO ESP32-S3 Wio-SX1262 (USB + BLE)'
-          - 'Seeed XIAO ESP32-S3 Wio-SX1262 (nur USB)'
           - 'Seeed XIAO ESP32-S3 Wio-SX1262 (nur BLE)'
-          - 'Heltec V3 (USB + BLE)'
-          - 'Heltec V3 (nur USB)'
+          - 'Seeed XIAO ESP32-S3 Wio-SX1262 (nur BLE)'
           - 'Heltec V3 (nur BLE)'
-          - 'RAK4631 (USB + BLE)'
-          - 'RAK4631 (nur USB)'
           - 'RAK4631 (nur BLE)'
-          - 'Alle fünf Release-Ziele'
+          - 'Alle drei BLE-Release-Ziele'
   push:
     tags:
       - '**'
@@ -47,39 +42,21 @@ jobs:
         shell: bash
         run: |
           if [[ "$EVENT_NAME" != "workflow_dispatch" ]]; then
-            TARGET_PRESET='Alle fünf Release-Ziele'
+            TARGET_PRESET='Alle drei BLE-Release-Ziele'
           fi
 
           case "$TARGET_PRESET" in
-            'Seeed XIAO ESP32-S3 Wio-SX1262 (USB + BLE)')
-              TARGETS='["Xiao_S3_WIO_companion_radio_usb","Xiao_S3_WIO_companion_radio_ble"]'
-              ;;
-            'Seeed XIAO ESP32-S3 Wio-SX1262 (nur USB)')
-              TARGETS='["Xiao_S3_WIO_companion_radio_usb"]'
-              ;;
             'Seeed XIAO ESP32-S3 Wio-SX1262 (nur BLE)')
               TARGETS='["Xiao_S3_WIO_companion_radio_ble"]'
-              ;;
-            'Heltec V3 (USB + BLE)')
-              TARGETS='["Heltec_v3_companion_radio_usb","Heltec_v3_companion_radio_ble"]'
-              ;;
-            'Heltec V3 (nur USB)')
-              TARGETS='["Heltec_v3_companion_radio_usb"]'
               ;;
             'Heltec V3 (nur BLE)')
               TARGETS='["Heltec_v3_companion_radio_ble"]'
               ;;
-            'RAK4631 (USB + BLE)')
-              TARGETS='["RAK_4631_companion_radio_usb","RAK_4631_companion_radio_ble"]'
-              ;;
-            'RAK4631 (nur USB)')
-              TARGETS='["RAK_4631_companion_radio_usb"]'
-              ;;
             'RAK4631 (nur BLE)')
               TARGETS='["RAK_4631_companion_radio_ble"]'
               ;;
-            'Alle fünf Release-Ziele')
-              TARGETS='["Xiao_S3_WIO_companion_radio_usb","Xiao_S3_WIO_companion_radio_ble","Heltec_v3_companion_radio_usb","Heltec_v3_companion_radio_ble","RAK_4631_companion_radio_ble"]'
+            'Alle drei BLE-Release-Ziele')
+              TARGETS='["Xiao_S3_WIO_companion_radio_ble","Heltec_v3_companion_radio_ble","RAK_4631_companion_radio_ble","Xiao_S3_WIO_repeater"]'
               ;;
             *)
               echo "Unbekannte Geräteauswahl: $TARGET_PRESET" >&2

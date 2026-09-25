@@ -815,16 +815,16 @@ void MyMesh::onGroupDataRecv(mesh::Packet* packet, uint8_t type,
   uint32_t hours = (uptime_seconds % 86400) / 3600;
   uint32_t minutes = (uptime_seconds % 3600) / 60;
   if (strcmp(response_kind, "status") == 0) {
-    snprintf(response, sizeof(response), "@[%s] %s: online, %lu packets, %lu sent",
-             sender, RPINFO_CHANNEL_NAME, (unsigned long)radio_driver.getPacketsRecv(),
+    snprintf(response, sizeof(response), "@[%s] online, %lu packets, %lu sent",
+             sender, (unsigned long)radio_driver.getPacketsRecv(),
              (unsigned long)radio_driver.getPacketsSent());
   } else if (strcmp(response_kind, "info") == 0) {
-    snprintf(response, sizeof(response), "@[%s] %s: %s %s, node %s, %u kHz BW, SF%u",
-             sender, RPINFO_CHANNEL_NAME, FIRMWARE_ROLE, FIRMWARE_VERSION,
+    snprintf(response, sizeof(response), "@[%s] %s %s, node %s, %u kHz BW, SF%u",
+             sender, FIRMWARE_ROLE, FIRMWARE_VERSION,
              _prefs.node_name, (unsigned int)_prefs.bw, (unsigned int)_prefs.sf);
   } else {
-    snprintf(response, sizeof(response), "@[%s] %s: uptime %lud %02lu:%02lu",
-             sender, RPINFO_CHANNEL_NAME, (unsigned long)days, (unsigned long)hours,
+    snprintf(response, sizeof(response), "@[%s] uptime %lud %02lu:%02lu",
+             sender, (unsigned long)days, (unsigned long)hours,
              (unsigned long)minutes);
   }
 

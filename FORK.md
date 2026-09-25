@@ -1,6 +1,6 @@
 # Meshcore-Fork: reguläre Companion-Firmware
 
-Aktuelle Fork-Version: `v1.0.10`
+Aktuelle Fork-Version: `v1.0.11`
 
 Dieser Fork basiert auf der offiziellen MeshCore-Firmware und behält die normalen
 Companion-Schnittstellen bei. Damit kann das benachbarte `Meshcore-Dashboard` über
@@ -164,27 +164,26 @@ pio project config | Select-String 'companion_radio_(usb|ble)'
 
 Der Workflow `Build End-Device Companion Firmwares` baut bei manueller Ausführung,
 bei jedem neu gepushten Tag und beim Veröffentlichen eines GitHub-Releases eine
-fest begrenzte Auswahl von höchstens fünf Companion-Zielen. So werden nicht mehr
-über hundert Matrix-Jobs gestartet. Aktuell werden diese Ziele gebaut:
+fest begrenzte Auswahl von drei BLE-Companion-Zielen und einem XIAO-Repeater-Ziel.
+So werden nicht mehr über hundert Matrix-Jobs gestartet. Aktuell werden diese
+Ziele gebaut:
 
-- `Xiao_S3_WIO_companion_radio_usb`
 - `Xiao_S3_WIO_companion_radio_ble`
-- `Heltec_v3_companion_radio_usb`
 - `Heltec_v3_companion_radio_ble`
 - `RAK_4631_companion_radio_ble`
+- `Xiao_S3_WIO_repeater`
 
 Bei einem manuellen Start über **Actions → Build End-Device Companion Firmwares
 → Run workflow** erscheint ein Dropdown. Dort kann gezielt der Seeed XIAO
-ESP32-S3 mit Wio-SX1262, der Heltec V3 oder der RAK4631 ausgewählt werden, jeweils
-als USB-, BLE- oder kombinierter Build. Zusätzlich steht das Preset **Alle fünf
-Release-Ziele** zur Verfügung. Standardmäßig werden beim manuellen Start nur die
-beiden XIAO-Varianten gebaut. Tag- und Release-Builds verwenden unabhängig vom
-Dropdown immer die fünf oben aufgeführten Release-Ziele.
+ESP32-S3 mit Wio-SX1262, der Heltec V3 oder der RAK4631 als BLE-Build ausgewählt
+werden. Zusätzlich steht das Preset **Alle drei BLE-Release-Ziele** zur Verfügung.
+Tag- und Release-Builds verwenden unabhängig vom Dropdown immer die drei
+BLE-Companion-Ziele plus den XIAO-S3-WIO-Repeater.
 
-Damit entstehen für den Seeed XIAO ESP32-S3 mit Wio-SX1262 sowohl die normale
-Update-Datei als auch die vollständige `-merged.bin` für USB und BLE. Bei einem
-veröffentlichten Release werden die Firmware-Dateien an genau diesen Release
-angehängt, ohne dessen Titel oder Beschreibung zu überschreiben. Pro Ziel werden
+Damit entstehen für den Seeed XIAO ESP32-S3 mit Wio-SX1262 die BLE-Companion-Dateien
+sowie das Repeater-Paket. Bei einem veröffentlichten Release werden die
+Firmware-Dateien an genau diesen Release angehängt, ohne dessen Titel oder
+Beschreibung zu überschreiben. Pro Ziel werden
 nur die tatsächlich flashbaren Dateien veröffentlicht, die der jeweilige
 Mikrocontroller benötigt:
 

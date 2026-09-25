@@ -8,7 +8,6 @@ on:
   push:
     tags:
       - 'repeater-*'
-      - 'autoreply-*'
 
 jobs:
   build-repeater-firmwares:
@@ -16,3 +15,4 @@ jobs:
     with:
       firmware_type: 'repeater'
       release_title_prefix: 'Repeater Firmware'
+      firmware_targets: '["Xiao_S3_WIO_repeater"]'
