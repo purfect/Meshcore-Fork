@@ -60,27 +60,19 @@
 
 #define LAZY_CONTACTS_WRITE_DELAY    5000
 
-#define RPINFO_CHANNEL_NAME           "#rpinfo"
+#define RPINFO_CHANNEL_NAME           "rpadmin"
 #define RPINFO_STATUS_COMMAND         "status"
 #define RPINFO_INFO_COMMAND           "info"
 #define RPINFO_UPTIME_COMMAND         "uptime"
 #define RPINFO_COOLDOWN_MILLIS        15000
 
 static const uint8_t RPINFO_CHANNEL_SECRET[PUB_KEY_SIZE] = {
-  0x4c, 0xe2, 0x15, 0x79, 0xab, 0xb5, 0x24, 0xe1,
-  0xe6, 0x1e, 0x52, 0x44, 0x64, 0x1b, 0xc8, 0xea
+  0xeb, 0x12, 0x09, 0x5c, 0x0d, 0xd3, 0x08, 0x14,
+  0xea, 0x3a, 0xe1, 0x01, 0x7e, 0x38, 0xb8, 0x3e
 };
 
 static bool isRpinfoSecret(const uint8_t *secret) {
-  const char *names[] = { RPINFO_CHANNEL_NAME, "rpinfo" };
-  if (memcmp(secret, RPINFO_CHANNEL_SECRET, PUB_KEY_SIZE) == 0) return true;
-  for (const char *name : names) {
-    uint8_t hashtag_secret[PUB_KEY_SIZE];
-    mesh::Utils::sha256(hashtag_secret, sizeof(hashtag_secret),
-                        (const uint8_t *)name, strlen(name));
-    if (memcmp(secret, hashtag_secret, PUB_KEY_SIZE) == 0) return true;
-  }
-  return false;
+  return memcmp(secret, RPINFO_CHANNEL_SECRET, PUB_KEY_SIZE) == 0;
 }
 
 static bool rpinfoCommandEquals(const char *text, const char *command) {
@@ -862,14 +854,7 @@ void MyMesh::onGroupDataRecv(mesh::Packet* packet, uint8_t type,
 
 int MyMesh::searchChannelsByHash(const uint8_t* hash, mesh::GroupChannel channels[], int max_matches) {
   if (!hash || !channels || max_matches < 1) return 0;
-  const char *names[] = { RPINFO_CHANNEL_NAME, "rpinfo" };
-  const uint8_t *secrets[3] = { RPINFO_CHANNEL_SECRET, NULL, NULL };
-  uint8_t hashtag_secrets[2][PUB_KEY_SIZE];
-  for (int i = 0; i < 2; i++) {
-    mesh::Utils::sha256(hashtag_secrets[i], sizeof(hashtag_secrets[i]),
-                        (const uint8_t *)names[i], strlen(names[i]));
-    secrets[i + 1] = hashtag_secrets[i];
-  }
+  const uint8_t *secrets[] = { RPINFO_CHANNEL_SECRET };
   int matches = 0;
   for (const uint8_t *secret : secrets) {
     mesh::GroupChannel rpinfo_channel = {};
