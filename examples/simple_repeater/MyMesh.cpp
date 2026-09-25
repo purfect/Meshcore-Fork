@@ -844,6 +844,17 @@ void MyMesh::onGroupDataRecv(mesh::Packet* packet, uint8_t type,
   (void)packet;
 }
 
+int MyMesh::searchChannelsByHash(const uint8_t* hash, mesh::GroupChannel channels[], int max_matches) {
+  if (!hash || !channels || max_matches < 1) return 0;
+  mesh::GroupChannel rpinfo_channel = {};
+  memcpy(rpinfo_channel.secret, RPINFO_CHANNEL_SECRET, sizeof(RPINFO_CHANNEL_SECRET));
+  mesh::Utils::sha256(rpinfo_channel.hash, sizeof(rpinfo_channel.hash),
+                      rpinfo_channel.secret, sizeof(rpinfo_channel.secret));
+  if (rpinfo_channel.hash[0] != *hash) return 0;
+  channels[0] = rpinfo_channel;
+  return 1;
+}
+
 bool MyMesh::onPeerPathRecv(mesh::Packet *packet, int sender_idx, const uint8_t *secret, uint8_t *path,
                             uint8_t path_len, uint8_t extra_type, uint8_t *extra, uint8_t extra_len) {
   // TODO: prevent replay attacks
