@@ -71,6 +71,14 @@ static const uint8_t RPINFO_CHANNEL_SECRET[PUB_KEY_SIZE] = {
   0xe6, 0x1e, 0x52, 0x44, 0x64, 0x1b, 0xc8, 0xea
 };
 
+static bool isRpinfoSecret(const uint8_t *secret) {
+  uint8_t hashtag_secret[PUB_KEY_SIZE];
+  mesh::Utils::sha256(hashtag_secret, sizeof(hashtag_secret),
+                      (const uint8_t *)RPINFO_CHANNEL_NAME, strlen(RPINFO_CHANNEL_NAME));
+  return memcmp(secret, RPINFO_CHANNEL_SECRET, PUB_KEY_SIZE) == 0 ||
+         memcmp(secret, hashtag_secret, PUB_KEY_SIZE) == 0;
+}
+
 static bool rpinfoCommandEquals(const char *text, const char *command) {
   while (*text == ' ') text++;
   size_t length = strlen(command);
@@ -786,7 +794,7 @@ void MyMesh::onPeerDataRecv(mesh::Packet *packet, uint8_t type, int sender_idx, 
 void MyMesh::onGroupDataRecv(mesh::Packet* packet, uint8_t type,
                              const mesh::GroupChannel& channel, uint8_t* data, size_t len) {
   if (type != PAYLOAD_TYPE_GRP_TXT || len < 5 ||
-      memcmp(channel.secret, RPINFO_CHANNEL_SECRET, sizeof(RPINFO_CHANNEL_SECRET)) != 0) return;
+  !isRpinfoSecret(channel.secret)) return;
 
   data[len] = 0;
   char *message = (char *)&data[5];
@@ -846,13 +854,19 @@ void MyMesh::onGroupDataRecv(mesh::Packet* packet, uint8_t type,
 
 int MyMesh::searchChannelsByHash(const uint8_t* hash, mesh::GroupChannel channels[], int max_matches) {
   if (!hash || !channels || max_matches < 1) return 0;
-  mesh::GroupChannel rpinfo_channel = {};
-  memcpy(rpinfo_channel.secret, RPINFO_CHANNEL_SECRET, sizeof(RPINFO_CHANNEL_SECRET));
-  mesh::Utils::sha256(rpinfo_channel.hash, sizeof(rpinfo_channel.hash),
-                      rpinfo_channel.secret, sizeof(rpinfo_channel.secret));
-  if (rpinfo_channel.hash[0] != *hash) return 0;
-  channels[0] = rpinfo_channel;
-  return 1;
+  uint8_t hashtag_secret[PUB_KEY_SIZE];
+  mesh::Utils::sha256(hashtag_secret, sizeof(hashtag_secret),
+                      (const uint8_t *)RPINFO_CHANNEL_NAME, strlen(RPINFO_CHANNEL_NAME));
+  const uint8_t *secrets[] = { RPINFO_CHANNEL_SECRET, hashtag_secret };
+  int matches = 0;
+  for (const uint8_t *secret : secrets) {
+    mesh::GroupChannel rpinfo_channel = {};
+    memcpy(rpinfo_channel.secret, secret, PUB_KEY_SIZE);
+    mesh::Utils::sha256(rpinfo_channel.hash, sizeof(rpinfo_channel.hash),
+                        rpinfo_channel.secret, PUB_KEY_SIZE);
+    if (rpinfo_channel.hash[0] == *hash) channels[matches++] = rpinfo_channel;
+  }
+  return matches;
 }
 
 bool MyMesh::onPeerPathRecv(mesh::Packet *packet, int sender_idx, const uint8_t *secret, uint8_t *path,
