@@ -40,7 +40,7 @@ jobs:
           if [[ -n "$REQUESTED_TARGETS" ]]; then
             # A caller can explicitly limit the matrix to avoid building every supported board.
             JSON_ARRAY=$(echo "$REQUESTED_TARGETS" | jq -c '
-              if type != "array" or length == 0 or length > 5 or any(.[]; type != "string")
+              if type != "array" or length == 0 or length > 8 or any(.[]; type != "string")
               then error("firmware_targets must contain between 1 and 8 target names")
               else . end')
           else
