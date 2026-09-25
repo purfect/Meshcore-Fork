@@ -1,6 +1,6 @@
 # Meshcore-Fork: reguläre Companion-Firmware
 
-Aktuelle Fork-Version: `v1.0.16`
+Aktuelle Fork-Version: `v1.0.17`
 
 Dieser Fork basiert auf der offiziellen MeshCore-Firmware und behält die normalen
 Companion-Schnittstellen bei. Damit kann das benachbarte `Meshcore-Dashboard` über

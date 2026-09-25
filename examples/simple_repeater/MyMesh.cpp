@@ -836,16 +836,16 @@ void MyMesh::onGroupDataRecv(mesh::Packet* packet, uint8_t type,
              (unsigned long)minutes);
   }
 
-  uint8_t response_data[5 + 128];
+  uint8_t response_data[5 + 32 + 2 + 128];
   uint32_t response_timestamp = getRTCClock()->getCurrentTimeUnique();
   memcpy(response_data, &response_timestamp, sizeof(response_timestamp));
   response_data[4] = 0;
-  size_t response_len = strlen(response);
-  if (response_len > sizeof(response_data) - 5) response_len = sizeof(response_data) - 5;
-  memcpy(&response_data[5], response, response_len);
-  mesh::Packet *reply = createGroupDatagram(PAYLOAD_TYPE_GRP_TXT, channel, response_data,
-                                            5 + response_len);
-  if (reply) {
+  int response_len = snprintf((char *)&response_data[5], sizeof(response_data) - 5,
+                              "%s: %s", _prefs.node_name, response);
+  if (response_len > 0) {
+    mesh::Packet *reply = createGroupDatagram(PAYLOAD_TYPE_GRP_TXT, channel, response_data,
+                                              5 + response_len);
+    if (!reply) return;
     sendFlood(reply, SERVER_RESPONSE_DELAY);
     last_reply_millis = now_millis;
   }
