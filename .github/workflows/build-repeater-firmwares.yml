@@ -15,4 +15,4 @@ jobs:
     with:
       firmware_type: 'repeater'
       release_title_prefix: 'Repeater Firmware'
-      firmware_targets: '["Xiao_S3_WIO_repeater"]'
+      firmware_targets: '["Xiao_S3_WIO_repeater","LilyGo_T-Echo_repeater","ThinkNode_M3_repeater","ThinkNode_M7_repeater"]'

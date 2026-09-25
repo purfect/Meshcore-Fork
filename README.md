@@ -3,7 +3,7 @@
 > mit Wio-SX1262 sowie zum autonomen Auto-Pong/Auto-Reply ohne verbundene App
 > stehen in [FORK.md](./FORK.md).
 >
-> Aktuelle Fork-Version: `v1.0.11`
+> Aktuelle Fork-Version: `v1.0.12`
 
 ## Windows 11: Firmware auf den Seeed XIAO ESP32-S3 flashen
 

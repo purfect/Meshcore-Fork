@@ -9,13 +9,14 @@ on:
       target_preset:
         description: 'Gerät und Verbindung auswählen'
         required: true
-        default: 'Seeed XIAO ESP32-S3 Wio-SX1262 (USB + BLE)'
+        default: 'Alle vier BLE-Companion- und Repeater-Ziele'
         type: choice
         options:
-          - 'Seeed XIAO ESP32-S3 Wio-SX1262 (nur BLE)'
-          - 'Heltec V3 (nur BLE)'
-          - 'RAK4631 (nur BLE)'
-          - 'Alle drei BLE-Release-Ziele'
+          - 'Seeed XIAO ESP32-S3 Wio-SX1262 (BLE + Repeater)'
+          - 'LilyGO T-Echo (BLE + Repeater)'
+          - 'ThinkNode M3 (BLE + Repeater)'
+          - 'ThinkNode M7 (BLE + Repeater)'
+          - 'Alle vier BLE-Companion- und Repeater-Ziele'
   push:
     tags:
       - '**'
@@ -41,21 +42,24 @@ jobs:
         shell: bash
         run: |
           if [[ "$EVENT_NAME" != "workflow_dispatch" ]]; then
-            TARGET_PRESET='Alle drei BLE-Release-Ziele'
+            TARGET_PRESET='Alle vier BLE-Companion- und Repeater-Ziele'
           fi
 
           case "$TARGET_PRESET" in
-            'Seeed XIAO ESP32-S3 Wio-SX1262 (nur BLE)')
-              TARGETS='["Xiao_S3_WIO_companion_radio_ble"]'
+            'Seeed XIAO ESP32-S3 Wio-SX1262 (BLE + Repeater)')
+              TARGETS='["Xiao_S3_WIO_companion_radio_ble","Xiao_S3_WIO_repeater"]'
               ;;
-            'Heltec V3 (nur BLE)')
-              TARGETS='["Heltec_v3_companion_radio_ble"]'
+            'LilyGO T-Echo (BLE + Repeater)')
+              TARGETS='["LilyGo_T-Echo_companion_radio_ble","LilyGo_T-Echo_repeater"]'
               ;;
-            'RAK4631 (nur BLE)')
-              TARGETS='["RAK_4631_companion_radio_ble"]'
+            'ThinkNode M3 (BLE + Repeater)')
+              TARGETS='["ThinkNode_M3_companion_radio_ble","ThinkNode_M3_repeater"]'
               ;;
-            'Alle drei BLE-Release-Ziele')
-              TARGETS='["Xiao_S3_WIO_companion_radio_ble","Heltec_v3_companion_radio_ble","RAK_4631_companion_radio_ble","Xiao_S3_WIO_repeater"]'
+            'ThinkNode M7 (BLE + Repeater)')
+              TARGETS='["ThinkNode_M7_companion_radio_ble","ThinkNode_M7_repeater"]'
+              ;;
+            'Alle vier BLE-Companion- und Repeater-Ziele')
+              TARGETS='["Xiao_S3_WIO_companion_radio_ble","Xiao_S3_WIO_repeater","LilyGo_T-Echo_companion_radio_ble","LilyGo_T-Echo_repeater","ThinkNode_M3_companion_radio_ble","ThinkNode_M3_repeater","ThinkNode_M7_companion_radio_ble","ThinkNode_M7_repeater"]'
               ;;
             *)
               echo "Unbekannte Geräteauswahl: $TARGET_PRESET" >&2
