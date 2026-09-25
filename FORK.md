@@ -1,6 +1,6 @@
 # Meshcore-Fork: reguläre Companion-Firmware
 
-Aktuelle Fork-Version: `v1.0.17`
+Aktuelle Fork-Version: `v1.0.18`
 
 Dieser Fork basiert auf der offiziellen MeshCore-Firmware und behält die normalen
 Companion-Schnittstellen bei. Damit kann das benachbarte `Meshcore-Dashboard` über
@@ -29,24 +29,13 @@ per USB oder Bluetooth mit einer App verbunden werden kann. Wenn im Dashboard
 zusätzlich Auto-Pong oder eine identische Auto-Reply-Regel aktiv ist, sollte diese
 dort abgeschaltet werden, damit nicht Firmware und Dashboard doppelt antworten.
 
-## RPINFO-Repeaterkanal
+## Repeater-Status per Web-App
 
-Repeater-Firmwares erkennen den privaten Kanal `rpadmin` mit dem fest integrierten
-Secret `eb12095c0dd30814ea3ae1017e38b83e`. Der Kanal muss in der regulären
-MeshCore-App als privater Kanal mit exakt diesem Secret angelegt werden. Im Kanal
-können diese Befehle gesendet werden:
-
-```text
-status                           Kurzer Online- und Paketstatus
-info                             Firmware, Node-Name und Funkparameter
-uptime                           Zeit seit dem letzten Neustart
-```
-
-Jeder empfangende Repeater antwortet als normale verschlüsselte Kanalnachricht.
-Andere Kanäle und alle bisherigen Repeater-Funktionen bleiben unverändert. Pro
-Repeater gilt ein Cooldown von 15 Sekunden gegen Antwortfluten. Das Repeater-Target
-`Xiao_S3_WIO_repeater` wird bei `autoreply-*`-Release-Tags zusätzlich zur normalen
-Companion-Matrix gebaut.
+Die Repeater-Statusabfrage verwendet den vorhandenen strukturierten
+`REQ_TYPE_GET_STATUS`-Request statt eines Chatkanals. Das versionierte Modul
+`meshcore_repeater_status` verbindet sich per Bluetooth mit einem Companion,
+listet Repeater-Kontakte und fragt den ausgewählten Repeater über das Mesh ab.
+Die Antwort enthält unter anderem Uptime, Paketzaehler, Funkwerte und Queue.
 
 ## Konfiguration über die App (Custom Variables)
 
