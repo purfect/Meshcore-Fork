@@ -13,7 +13,6 @@ on:
         type: choice
         options:
           - 'Seeed XIAO ESP32-S3 Wio-SX1262 (nur BLE)'
-          - 'Seeed XIAO ESP32-S3 Wio-SX1262 (nur BLE)'
           - 'Heltec V3 (nur BLE)'
           - 'RAK4631 (nur BLE)'
           - 'Alle drei BLE-Release-Ziele'
