@@ -1,6 +1,6 @@
 # Meshcore-Fork: reguläre Companion-Firmware
 
-Aktuelle Fork-Version: `v1.0.14`
+Aktuelle Fork-Version: `v1.0.15`
 
 Dieser Fork basiert auf der offiziellen MeshCore-Firmware und behält die normalen
 Companion-Schnittstellen bei. Damit kann das benachbarte `Meshcore-Dashboard` über
@@ -32,9 +32,9 @@ dort abgeschaltet werden, damit nicht Firmware und Dashboard doppelt antworten.
 ## RPINFO-Repeaterkanal
 
 Repeater-Firmwares erkennen den verschlüsselten Kanal `#rpinfo` sowohl mit dem
-festen Secret `4ce21579abb524e1e61e5244641bc8ea` als auch mit dem von der regulären
-MeshCore-App aus `#rpinfo` abgeleiteten Hashtag-Secret. Im Kanal können aus der
-regulären MeshCore-App diese Befehle gesendet werden:
+festen Secret `4ce21579abb524e1e61e5244641bc8ea` sowie mit den üblichen
+Hashtag-Ableitungen aus `#rpinfo` oder `rpinfo`. Im Kanal können aus der regulären
+MeshCore-App diese Befehle gesendet werden:
 
 ```text
 status                           Kurzer Online- und Paketstatus

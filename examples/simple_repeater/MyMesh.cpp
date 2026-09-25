@@ -72,11 +72,15 @@ static const uint8_t RPINFO_CHANNEL_SECRET[PUB_KEY_SIZE] = {
 };
 
 static bool isRpinfoSecret(const uint8_t *secret) {
-  uint8_t hashtag_secret[PUB_KEY_SIZE];
-  mesh::Utils::sha256(hashtag_secret, sizeof(hashtag_secret),
-                      (const uint8_t *)RPINFO_CHANNEL_NAME, strlen(RPINFO_CHANNEL_NAME));
-  return memcmp(secret, RPINFO_CHANNEL_SECRET, PUB_KEY_SIZE) == 0 ||
-         memcmp(secret, hashtag_secret, PUB_KEY_SIZE) == 0;
+  const char *names[] = { RPINFO_CHANNEL_NAME, "rpinfo" };
+  if (memcmp(secret, RPINFO_CHANNEL_SECRET, PUB_KEY_SIZE) == 0) return true;
+  for (const char *name : names) {
+    uint8_t hashtag_secret[PUB_KEY_SIZE];
+    mesh::Utils::sha256(hashtag_secret, sizeof(hashtag_secret),
+                        (const uint8_t *)name, strlen(name));
+    if (memcmp(secret, hashtag_secret, PUB_KEY_SIZE) == 0) return true;
+  }
+  return false;
 }
 
 static bool rpinfoCommandEquals(const char *text, const char *command) {
@@ -799,11 +803,14 @@ void MyMesh::onGroupDataRecv(mesh::Packet* packet, uint8_t type,
   data[len] = 0;
   char *message = (char *)&data[5];
   char *separator = strchr(message, ':');
-  if (!separator) return;
-  *separator = 0;
-  char *sender = message;
-  while (*sender == ' ') sender++;
-  char *command = separator + 1;
+  char *sender = (char *)"";
+  char *command = message;
+  if (separator) {
+    *separator = 0;
+    sender = message;
+    while (*sender == ' ') sender++;
+    command = separator + 1;
+  }
   while (*command == ' ') command++;
 
   const char *response_kind = NULL;
@@ -818,21 +825,22 @@ void MyMesh::onGroupDataRecv(mesh::Packet* packet, uint8_t type,
       (unsigned long)(now_millis - last_reply_millis) < RPINFO_COOLDOWN_MILLIS) return;
 
   char response[128];
+  const char *mention = sender[0] ? sender : "MeshCore";
   uint32_t uptime_seconds = uptime_millis / 1000;
   uint32_t days = uptime_seconds / 86400;
   uint32_t hours = (uptime_seconds % 86400) / 3600;
   uint32_t minutes = (uptime_seconds % 3600) / 60;
   if (strcmp(response_kind, "status") == 0) {
     snprintf(response, sizeof(response), "@[%s] online, %lu packets, %lu sent",
-             sender, (unsigned long)radio_driver.getPacketsRecv(),
+         mention, (unsigned long)radio_driver.getPacketsRecv(),
              (unsigned long)radio_driver.getPacketsSent());
   } else if (strcmp(response_kind, "info") == 0) {
     snprintf(response, sizeof(response), "@[%s] %s %s, node %s, %u kHz BW, SF%u",
-             sender, FIRMWARE_ROLE, FIRMWARE_VERSION,
+         mention, FIRMWARE_ROLE, FIRMWARE_VERSION,
              _prefs.node_name, (unsigned int)_prefs.bw, (unsigned int)_prefs.sf);
   } else {
     snprintf(response, sizeof(response), "@[%s] uptime %lud %02lu:%02lu",
-             sender, (unsigned long)days, (unsigned long)hours,
+         mention, (unsigned long)days, (unsigned long)hours,
              (unsigned long)minutes);
   }
 
@@ -854,10 +862,14 @@ void MyMesh::onGroupDataRecv(mesh::Packet* packet, uint8_t type,
 
 int MyMesh::searchChannelsByHash(const uint8_t* hash, mesh::GroupChannel channels[], int max_matches) {
   if (!hash || !channels || max_matches < 1) return 0;
-  uint8_t hashtag_secret[PUB_KEY_SIZE];
-  mesh::Utils::sha256(hashtag_secret, sizeof(hashtag_secret),
-                      (const uint8_t *)RPINFO_CHANNEL_NAME, strlen(RPINFO_CHANNEL_NAME));
-  const uint8_t *secrets[] = { RPINFO_CHANNEL_SECRET, hashtag_secret };
+  const char *names[] = { RPINFO_CHANNEL_NAME, "rpinfo" };
+  const uint8_t *secrets[3] = { RPINFO_CHANNEL_SECRET, NULL, NULL };
+  uint8_t hashtag_secrets[2][PUB_KEY_SIZE];
+  for (int i = 0; i < 2; i++) {
+    mesh::Utils::sha256(hashtag_secrets[i], sizeof(hashtag_secrets[i]),
+                        (const uint8_t *)names[i], strlen(names[i]));
+    secrets[i + 1] = hashtag_secrets[i];
+  }
   int matches = 0;
   for (const uint8_t *secret : secrets) {
     mesh::GroupChannel rpinfo_channel = {};
