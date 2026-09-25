@@ -8,6 +8,7 @@ on:
   push:
     tags:
       - 'repeater-*'
+      - 'autoreply-*'
 
 jobs:
   build-repeater-firmwares:

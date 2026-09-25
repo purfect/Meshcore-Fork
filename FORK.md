@@ -1,6 +1,6 @@
 # Meshcore-Fork: reguläre Companion-Firmware
 
-Aktuelle Fork-Version: `v1.0.8`
+Aktuelle Fork-Version: `v1.0.9`
 
 Dieser Fork basiert auf der offiziellen MeshCore-Firmware und behält die normalen
 Companion-Schnittstellen bei. Damit kann das benachbarte `Meshcore-Dashboard` über
@@ -28,6 +28,24 @@ Die normalen Companion-Schnittstellen bleiben erhalten, sodass das Gerät weiter
 per USB oder Bluetooth mit einer App verbunden werden kann. Wenn im Dashboard
 zusätzlich Auto-Pong oder eine identische Auto-Reply-Regel aktiv ist, sollte diese
 dort abgeschaltet werden, damit nicht Firmware und Dashboard doppelt antworten.
+
+## RPINFO-Repeaterkanal
+
+Repeater-Firmwares enthalten den fest integrierten verschlüsselten Kanal `#rpinfo`
+mit dem Secret `4ce21579abb524e1e61e5244641bc8ea`. Im Kanal können aus der regulären
+MeshCore-App diese Befehle gesendet werden:
+
+```text
+status                           Kurzer Online- und Paketstatus
+info                             Firmware, Node-Name und Funkparameter
+uptime                           Zeit seit dem letzten Neustart
+```
+
+Jeder empfangende Repeater antwortet als normale verschlüsselte Kanalnachricht.
+Andere Kanäle und alle bisherigen Repeater-Funktionen bleiben unverändert. Pro
+Repeater gilt ein Cooldown von 15 Sekunden gegen Antwortfluten. Das Repeater-Target
+`Xiao_S3_WIO_repeater` wird bei `autoreply-*`-Release-Tags zusätzlich zur normalen
+Companion-Matrix gebaut.
 
 ## Konfiguration über die App (Custom Variables)
 

@@ -60,6 +60,26 @@
 
 #define LAZY_CONTACTS_WRITE_DELAY    5000
 
+#define RPINFO_CHANNEL_NAME           "#rpinfo"
+#define RPINFO_STATUS_COMMAND         "status"
+#define RPINFO_INFO_COMMAND           "info"
+#define RPINFO_UPTIME_COMMAND         "uptime"
+#define RPINFO_COOLDOWN_MILLIS        15000
+
+static const uint8_t RPINFO_CHANNEL_SECRET[PUB_KEY_SIZE] = {
+  0x4c, 0xe2, 0x15, 0x79, 0xab, 0xb5, 0x24, 0xe1,
+  0xe6, 0x1e, 0x52, 0x44, 0x64, 0x1b, 0xc8, 0xea
+};
+
+static bool rpinfoCommandEquals(const char *text, const char *command) {
+  while (*text == ' ') text++;
+  size_t length = strlen(command);
+  if (strncmp(text, command, length) != 0) return false;
+  text += length;
+  while (*text == ' ') text++;
+  return *text == 0;
+}
+
 void MyMesh::putNeighbour(const mesh::Identity &id, uint32_t timestamp, float snr) {
 #if MAX_NEIGHBOURS // check if neighbours enabled
   // find existing neighbour, else use least recently updated
@@ -761,6 +781,67 @@ void MyMesh::onPeerDataRecv(mesh::Packet *packet, uint8_t type, int sender_idx, 
       MESH_DEBUG_PRINTLN("onPeerDataRecv: possible replay attack detected");
     }
   }
+}
+
+void MyMesh::onGroupDataRecv(mesh::Packet* packet, uint8_t type,
+                             const mesh::GroupChannel& channel, uint8_t* data, size_t len) {
+  if (type != PAYLOAD_TYPE_GRP_TXT || len < 5 ||
+      memcmp(channel.secret, RPINFO_CHANNEL_SECRET, sizeof(RPINFO_CHANNEL_SECRET)) != 0) return;
+
+  data[len] = 0;
+  char *message = (char *)&data[5];
+  char *separator = strchr(message, ':');
+  if (!separator) return;
+  *separator = 0;
+  char *sender = message;
+  while (*sender == ' ') sender++;
+  char *command = separator + 1;
+  while (*command == ' ') command++;
+
+  const char *response_kind = NULL;
+  if (rpinfoCommandEquals(command, RPINFO_STATUS_COMMAND)) response_kind = "status";
+  else if (rpinfoCommandEquals(command, RPINFO_INFO_COMMAND)) response_kind = "info";
+  else if (rpinfoCommandEquals(command, RPINFO_UPTIME_COMMAND)) response_kind = "uptime";
+  else return;
+
+  static unsigned long last_reply_millis = 0;
+  unsigned long now_millis = millis();
+  if (last_reply_millis != 0 &&
+      (unsigned long)(now_millis - last_reply_millis) < RPINFO_COOLDOWN_MILLIS) return;
+
+  char response[128];
+  uint32_t uptime_seconds = uptime_millis / 1000;
+  uint32_t days = uptime_seconds / 86400;
+  uint32_t hours = (uptime_seconds % 86400) / 3600;
+  uint32_t minutes = (uptime_seconds % 3600) / 60;
+  if (strcmp(response_kind, "status") == 0) {
+    snprintf(response, sizeof(response), "@[%s] %s: online, %lu packets, %lu sent",
+             sender, RPINFO_CHANNEL_NAME, (unsigned long)radio_driver.getPacketsRecv(),
+             (unsigned long)radio_driver.getPacketsSent());
+  } else if (strcmp(response_kind, "info") == 0) {
+    snprintf(response, sizeof(response), "@[%s] %s: %s %s, node %s, %u kHz BW, SF%u",
+             sender, RPINFO_CHANNEL_NAME, FIRMWARE_ROLE, FIRMWARE_VERSION,
+             _prefs.node_name, (unsigned int)_prefs.bw, (unsigned int)_prefs.sf);
+  } else {
+    snprintf(response, sizeof(response), "@[%s] %s: uptime %lud %02lu:%02lu",
+             sender, RPINFO_CHANNEL_NAME, (unsigned long)days, (unsigned long)hours,
+             (unsigned long)minutes);
+  }
+
+  uint8_t response_data[5 + 128];
+  uint32_t response_timestamp = getRTCClock()->getCurrentTimeUnique();
+  memcpy(response_data, &response_timestamp, sizeof(response_timestamp));
+  response_data[4] = 0;
+  size_t response_len = strlen(response);
+  if (response_len > sizeof(response_data) - 5) response_len = sizeof(response_data) - 5;
+  memcpy(&response_data[5], response, response_len);
+  mesh::Packet *reply = createGroupDatagram(PAYLOAD_TYPE_GRP_TXT, channel, response_data,
+                                            5 + response_len);
+  if (reply) {
+    sendFlood(reply, SERVER_RESPONSE_DELAY);
+    last_reply_millis = now_millis;
+  }
+  (void)packet;
 }
 
 bool MyMesh::onPeerPathRecv(mesh::Packet *packet, int sender_idx, const uint8_t *secret, uint8_t *path,
