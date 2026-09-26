@@ -133,7 +133,7 @@ Bluetooth kann so gebaut werden:
 
 ### BLE-Companions mit optionaler Repeater-Funktion im Hauptnetz
 
-Alle sechs BLE-Companion-Ziele des Release-Workflows kombinieren Auto-Pong mit
+Alle sieben BLE-Companion-Ziele des Release-Workflows kombinieren Auto-Pong mit
 dem Client-Repeater. Der Repeater ist nach einer Neuinstallation zunächst aus
 und kann mit dem Repeater-Schalter in der Companion-App zugeschaltet werden.
 Die Einstellung wird gespeichert.
@@ -167,24 +167,24 @@ pio project config | Select-String 'companion_radio_(usb|ble)'
 
 Der Workflow `Build End-Device Companion Firmwares` baut bei manueller Ausführung,
 bei jedem neu gepushten Tag und beim Veröffentlichen eines GitHub-Releases eine
-fest begrenzte Auswahl von vier BLE-Companion-Zielen und vier Repeater-Zielen.
-So werden nicht mehr über hundert Matrix-Jobs gestartet. Aktuell werden diese
-Ziele gebaut:
+fest begrenzte Auswahl von sieben BLE-Companion-Zielen. So werden nicht mehr über
+hundert Matrix-Jobs gestartet. Aktuell werden diese Ziele gebaut:
 
-- `Xiao_S3_WIO_companion_radio_ble` / `Xiao_S3_WIO_repeater`
-- `LilyGo_T-Echo_companion_radio_ble` / `LilyGo_T-Echo_repeater`
-- `ThinkNode_M3_companion_radio_ble` / `ThinkNode_M3_repeater`
-- `ThinkNode_M7_companion_radio_ble` / `ThinkNode_M7_repeater`
+- `Xiao_S3_WIO_companion_radio_ble`
+- `LilyGo_T-Echo_companion_radio_ble`
+- `ThinkNode_M2_companion_radio_ble`
+- `ThinkNode_M3_companion_radio_ble`
+- `ThinkNode_M7_companion_radio_ble`
+- `Heltec_v3_companion_radio_ble`
+- `heltec_v4_companion_radio_ble`
 
 Bei einem manuellen Start über **Actions → Build End-Device Companion Firmwares
-→ Run workflow** erscheint ein Dropdown. Dort kann gezielt der Seeed XIAO
-ESP32-S3 mit Wio-SX1262, der LilyGO T-Echo, der ThinkNode M3 oder der ThinkNode M7
-als BLE-Companion- und Repeater-Build ausgewählt werden. Zusätzlich steht das
-Preset **Alle vier BLE-Companion- und Repeater-Ziele** zur Verfügung. Tag- und
-Release-Builds verwenden unabhängig vom Dropdown immer alle acht Ziele.
+→ Run workflow** erscheint ein Dropdown. Dort kann jedes Gerät einzeln oder mit
+dem Preset **Alle sieben BLE-Companion-Ziele** ausgewählt werden. Tag- und
+Release-Builds verwenden unabhängig vom Dropdown immer alle sieben Ziele.
 
-Damit entstehen für alle vier Geräte jeweils die BLE-Companion-Datei sowie das
-Repeater-Paket. Bei einem veröffentlichten Release werden die
+Damit entsteht für alle sieben Geräte jeweils die passende BLE-Companion-Datei.
+Bei einem veröffentlichten Release werden die
 Firmware-Dateien an genau diesen Release angehängt, ohne dessen Titel oder
 Beschreibung zu überschreiben. Pro Ziel werden
 nur die tatsächlich flashbaren Dateien veröffentlicht, die der jeweilige

@@ -9,16 +9,17 @@ on:
       target_preset:
         description: 'Gerät und Verbindung auswählen'
         required: true
-        default: 'Alle sechs BLE-Companion-Ziele'
+        default: 'Alle sieben BLE-Companion-Ziele'
         type: choice
         options:
           - 'Seeed XIAO ESP32-S3 Wio-SX1262 (BLE Companion)'
           - 'LilyGO T-Echo (BLE Companion)'
+          - 'ThinkNode M2 (BLE Companion)'
           - 'ThinkNode M3 (BLE Companion)'
           - 'ThinkNode M7 (BLE Companion)'
           - 'Heltec V3 (BLE Companion)'
           - 'Heltec V4 (BLE Companion)'
-          - 'Alle sechs BLE-Companion-Ziele'
+          - 'Alle sieben BLE-Companion-Ziele'
   push:
     tags:
       - '**'
@@ -44,7 +45,7 @@ jobs:
         shell: bash
         run: |
           if [[ "$EVENT_NAME" != "workflow_dispatch" ]]; then
-            TARGET_PRESET='Alle sechs BLE-Companion-Ziele'
+            TARGET_PRESET='Alle sieben BLE-Companion-Ziele'
           fi
 
           case "$TARGET_PRESET" in
@@ -53,6 +54,9 @@ jobs:
               ;;
             'LilyGO T-Echo (BLE Companion)')
               TARGETS='["LilyGo_T-Echo_companion_radio_ble"]'
+              ;;
+            'ThinkNode M2 (BLE Companion)')
+              TARGETS='["ThinkNode_M2_companion_radio_ble"]'
               ;;
             'ThinkNode M3 (BLE Companion)')
               TARGETS='["ThinkNode_M3_companion_radio_ble"]'
@@ -66,8 +70,8 @@ jobs:
             'Heltec V4 (BLE Companion)')
               TARGETS='["heltec_v4_companion_radio_ble"]'
               ;;
-            'Alle sechs BLE-Companion-Ziele')
-              TARGETS='["Xiao_S3_WIO_companion_radio_ble","LilyGo_T-Echo_companion_radio_ble","ThinkNode_M3_companion_radio_ble","ThinkNode_M7_companion_radio_ble","Heltec_v3_companion_radio_ble","heltec_v4_companion_radio_ble"]'
+            'Alle sieben BLE-Companion-Ziele')
+              TARGETS='["Xiao_S3_WIO_companion_radio_ble","LilyGo_T-Echo_companion_radio_ble","ThinkNode_M2_companion_radio_ble","ThinkNode_M3_companion_radio_ble","ThinkNode_M7_companion_radio_ble","Heltec_v3_companion_radio_ble","heltec_v4_companion_radio_ble"]'
               ;;
             *)
               echo "Unbekannte Geräteauswahl: $TARGET_PRESET" >&2
