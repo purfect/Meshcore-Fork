@@ -9,7 +9,7 @@ on:
       target_preset:
         description: 'Gerät und Verbindung auswählen'
         required: true
-        default: 'Alle sieben BLE-Companion-Ziele'
+        default: 'Alle sechs BLE-Companion-Ziele'
         type: choice
         options:
           - 'Seeed XIAO ESP32-S3 Wio-SX1262 (BLE Companion)'
@@ -19,7 +19,7 @@ on:
           - 'ThinkNode M7 (BLE Companion)'
           - 'Heltec V3 (BLE Companion)'
           - 'Heltec V4 (BLE Companion)'
-          - 'Alle sieben BLE-Companion-Ziele'
+          - 'Alle sechs BLE-Companion-Ziele'
   push:
     tags:
       - '**'
@@ -49,7 +49,7 @@ jobs:
             if [[ "$REF_NAME" == hybrid-* ]]; then
               TARGET_PRESET='Seeed XIAO ESP32-S3 Wio-SX1262 (BLE Hybrid Companion/Repeater)'
             else
-              TARGET_PRESET='Alle sieben BLE-Companion-Ziele'
+              TARGET_PRESET='Alle sechs BLE-Companion-Ziele'
             fi
           fi
 
@@ -75,8 +75,8 @@ jobs:
             'Heltec V4 (BLE Companion)')
               TARGETS='["heltec_v4_companion_radio_ble"]'
               ;;
-            'Alle sieben BLE-Companion-Ziele')
-              TARGETS='["Xiao_S3_WIO_companion_radio_ble","Xiao_S3_WIO_companion_radio_ble_hybrid","LilyGo_T-Echo_companion_radio_ble","ThinkNode_M3_companion_radio_ble","ThinkNode_M7_companion_radio_ble","Heltec_v3_companion_radio_ble","heltec_v4_companion_radio_ble"]'
+            'Alle sechs BLE-Companion-Ziele')
+              TARGETS='["Xiao_S3_WIO_companion_radio_ble","LilyGo_T-Echo_companion_radio_ble","ThinkNode_M3_companion_radio_ble","ThinkNode_M7_companion_radio_ble","Heltec_v3_companion_radio_ble","heltec_v4_companion_radio_ble"]'
               ;;
             *)
               echo "Unbekannte Geräteauswahl: $TARGET_PRESET" >&2
