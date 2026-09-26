@@ -9,16 +9,17 @@ on:
       target_preset:
         description: 'Gerät und Verbindung auswählen'
         required: true
-        default: 'Alle sechs BLE-Companion-Ziele'
+        default: 'Alle sieben BLE-Companion-Ziele'
         type: choice
         options:
           - 'Seeed XIAO ESP32-S3 Wio-SX1262 (BLE Companion)'
+          - 'Seeed XIAO ESP32-S3 Wio-SX1262 (BLE Hybrid Companion/Repeater)'
           - 'LilyGO T-Echo (BLE Companion)'
           - 'ThinkNode M3 (BLE Companion)'
           - 'ThinkNode M7 (BLE Companion)'
           - 'Heltec V3 (BLE Companion)'
           - 'Heltec V4 (BLE Companion)'
-          - 'Alle sechs BLE-Companion-Ziele'
+          - 'Alle sieben BLE-Companion-Ziele'
   push:
     tags:
       - '**'
@@ -40,16 +41,24 @@ jobs:
         id: select
         env:
           EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
           TARGET_PRESET: ${{ inputs.target_preset }}
         shell: bash
         run: |
           if [[ "$EVENT_NAME" != "workflow_dispatch" ]]; then
-            TARGET_PRESET='Alle sechs BLE-Companion-Ziele'
+            if [[ "$REF_NAME" == hybrid-* ]]; then
+              TARGET_PRESET='Seeed XIAO ESP32-S3 Wio-SX1262 (BLE Hybrid Companion/Repeater)'
+            else
+              TARGET_PRESET='Alle sieben BLE-Companion-Ziele'
+            fi
           fi
 
           case "$TARGET_PRESET" in
             'Seeed XIAO ESP32-S3 Wio-SX1262 (BLE Companion)')
               TARGETS='["Xiao_S3_WIO_companion_radio_ble"]'
+              ;;
+            'Seeed XIAO ESP32-S3 Wio-SX1262 (BLE Hybrid Companion/Repeater)')
+              TARGETS='["Xiao_S3_WIO_companion_radio_ble_hybrid"]'
               ;;
             'LilyGO T-Echo (BLE Companion)')
               TARGETS='["LilyGo_T-Echo_companion_radio_ble"]'
@@ -66,8 +75,8 @@ jobs:
             'Heltec V4 (BLE Companion)')
               TARGETS='["heltec_v4_companion_radio_ble"]'
               ;;
-            'Alle sechs BLE-Companion-Ziele')
-              TARGETS='["Xiao_S3_WIO_companion_radio_ble","LilyGo_T-Echo_companion_radio_ble","ThinkNode_M3_companion_radio_ble","ThinkNode_M7_companion_radio_ble","Heltec_v3_companion_radio_ble","heltec_v4_companion_radio_ble"]'
+            'Alle sieben BLE-Companion-Ziele')
+              TARGETS='["Xiao_S3_WIO_companion_radio_ble","Xiao_S3_WIO_companion_radio_ble_hybrid","LilyGo_T-Echo_companion_radio_ble","ThinkNode_M3_companion_radio_ble","ThinkNode_M7_companion_radio_ble","Heltec_v3_companion_radio_ble","heltec_v4_companion_radio_ble"]'
               ;;
             *)
               echo "Unbekannte Geräteauswahl: $TARGET_PRESET" >&2
