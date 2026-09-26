@@ -115,6 +115,7 @@ Die passenden offiziellen Build-Ziele sind bereits enthalten:
 | --- | --- |
 | USB (empfohlen) | `Xiao_S3_WIO_companion_radio_usb` |
 | Bluetooth LE | `Xiao_S3_WIO_companion_radio_ble` |
+| Bluetooth LE, Hybrid Companion/Repeater | `Xiao_S3_WIO_companion_radio_ble_hybrid` |
 | WLAN/TCP | `Xiao_S3_WIO_companion_radio_wifi` |
 | Hardware-UART | `Xiao_S3_WIO_companion_radio_serial` |
 
@@ -129,6 +130,26 @@ Bluetooth kann so gebaut werden:
 
 ```powershell
 .\tools\build-companion.ps1 -Target Xiao_S3_WIO_companion_radio_ble
+```
+
+### BLE-Hybrid mit Repeater-Funktion im Hauptnetz
+
+Das separate Ziel `Xiao_S3_WIO_companion_radio_ble_hybrid` kombiniert den
+regulären BLE-Companion einschließlich Auto-Pong mit dem Client-Repeater. Beim
+ersten Start des Hybrid-Builds wird das Weiterleiten einmalig eingeschaltet und
+das Funkprofil auf die Hauptnetzwerte gesetzt. Das gilt auch bei einem Update
+über eine vorhandene Companion-Installation.
+Die zulässige Repeater-Frequenz ist auf die Hauptnetzfrequenz `869.618 MHz`
+begrenzt; Bandbreite (`62.5 kHz`), Spreading Factor (`8`) und Coding Rate (`5`)
+entsprechen ebenfalls den Projektvorgaben.
+
+Der Repeater-Schalter in der Companion-App kann normal verwendet werden. Da die
+Firmware der App für den Repeater-Modus ausschließlich `869.618 MHz` meldet,
+bleibt das Gerät beim Ein- und Ausschalten auf der Hauptnetzfrequenz. Die
+Einstellung wird gespeichert und bei späteren Hybrid-Updates beibehalten.
+
+```powershell
+.\tools\build-companion.ps1 -Target Xiao_S3_WIO_companion_radio_ble_hybrid
 ```
 
 Voraussetzung ist eine installierte PlatformIO-CLI (`pio`, `platformio` oder das
