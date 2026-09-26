@@ -1091,11 +1091,7 @@ MyMesh::MyMesh(mesh::Radio &radio, mesh::RNG &rng, mesh::RTCClock &rtc, SimpleMe
   _prefs.radio_fem_rxgain = 1;
   _prefs.radio_fem_txgain = 0;
   //_prefs.rx_delay_base = 10.0f;  enable once new algo fixed
-#ifdef CLIENT_REPEAT_DEFAULT_ENABLED
-  _prefs.setRepeatEn(CLIENT_REPEAT_DEFAULT_ENABLED != 0);
-#else
   _prefs.setRepeatEn(false);
-#endif
 #if defined(USE_SX1262) || defined(USE_SX1268)
 #ifdef SX126X_RX_BOOSTED_GAIN
   _prefs.rx_boosted_gain = SX126X_RX_BOOSTED_GAIN;
@@ -1156,18 +1152,6 @@ void MyMesh::begin(bool has_display) {
   _prefs.gps_interval = constrain(_prefs.gps_interval, 0, 86400);  // Max 24 hours
 #ifdef AUTO_REPLY_ENABLED
   _prefs.auto_pong_enabled = constrain(_prefs.auto_pong_enabled, 0, 1);
-#endif
-
-#ifdef CLIENT_REPEAT_INITIALIZE_ONCE
-  if (!_prefs.hybrid_repeat_initialized) {
-    _prefs.freq = LORA_FREQ;
-    _prefs.bw = LORA_BW;
-    _prefs.sf = LORA_SF;
-    _prefs.cr = LORA_CR;
-    _prefs.setRepeatEn(true);
-    _prefs.hybrid_repeat_initialized = 1;
-    savePrefs();
-  }
 #endif
 
 #ifdef BLE_PIN_CODE // 123456 by default
